@@ -71,27 +71,35 @@ class Extents:
         return self.max_lon - (self.max_lon - self.min_lon) / 2
 
     def is_landscape(self):
+        """Landscape domains are at leadt 20% wider than they are tall."""
         return self.ratio > 1.2
 
     def is_portrait(self):
+        """Portrait domains are at least 20% taller than they are wide."""
         return self.ratio < 0.8
 
     def is_square(self):
+        """Square domains have a width and height within 20% of each other."""
         return not self.is_landscape() and not self.is_portrait()
 
     def is_global(self):
+        """Global domains cover > 60% of the globe."""
         return self.area > self.large_threshold
 
     def is_large(self):
+        """Large domains cover < 60% of the globe but > 20%."""
         return not self.is_global() and self.area > self.small_threshold
 
     def is_small(self):
+        """Small domains cover < 20% of the globe."""
         return not self.is_global() and not self.is_large()
 
     def is_polar(self):
+        """Polar domains are centered around a pole."""
         return abs(self.central_lat) > 75
 
     def is_equatorial(self):
+        """Equatorial domains are centered around the equator."""
         return abs(self.central_lat) < 25
 
     def mutate(self):
