@@ -23,3 +23,5 @@ except ImportError:  # pragma: no cover
     __version__ = "999"
 
 __all__ = ["__version__"]
+
+from magpye.schema import schema  # noqa: F401

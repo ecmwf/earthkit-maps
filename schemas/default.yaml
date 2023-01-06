@@ -1,0 +1,40 @@
+# Style
+font: Open Sans
+colormap: turbo
+
+# Projections and interpolation
+reference_crs: PlateCarree
+interpolation: None
+
+# Dates and times
+date_format: "%Y-%m-%d"
+time_format: "%H:%M"
+
+# Plotting defaults
+contour:
+  colors: black
+  labels: true
+  label_fontsize: 7
+  linewidths: [1, 0.75, 0.75, 0.75]
+point:
+  marker: o
+colorbar:
+  location: right
+
+# Auxilliary layers defaults
+coastlines:
+  linewidth: 0.75
+borders:
+  linestyle: "--"
+  linewidth: 0.75
+states_provinces:
+  linestyle: ":"
+  linewidth: 0.75
+gridlines:
+  linestyle: "--"
+  edgecolor: grey
+  alpha: 0.8
+  x_inline: false
+  y_inline: false
+  draw_labels: ["bottom", "left"]
+  rotate_labels: false

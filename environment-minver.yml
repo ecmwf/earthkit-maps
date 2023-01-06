@@ -6,3 +6,7 @@ dependencies:
 - pytest
 - pytest-cov
 # DO NOT EDIT ABOVE THIS LINE, ADD DEPENDENCIES BELOW
+- cartopy
+- pyyaml
+- numpy
+- xarray
