@@ -4,7 +4,7 @@ import pytest
 from magpye.domains import auto
 
 
-def test_europe():
+def test_preset():
     expected_bounds = [2502500, 7497500, 752500, 5497500]
     expected_crs = ccrs.LambertAzimuthalEqualArea(
         central_latitude=52,
@@ -42,3 +42,167 @@ def test_country():
             assert crs_params[key] == pytest.approx(expected_crs_params[key], 1)
         else:
             assert crs_params[key] == expected_crs_params[key]
+
+
+def test_Extents_is_global():
+    # Test whole globe
+    domain = [-180, 180, -90, 90]
+    extents = auto.Extents(domain)
+    assert extents.is_global()
+
+    # Test > 60% coverage but < 100%
+    domain = [-150, 150, -65, 65]
+    extents = auto.Extents(domain)
+    assert extents.is_global()
+
+    # Test < 60% coverage
+    domain = [-140, 140, -65, 65]
+    extents = auto.Extents(domain)
+    assert not extents.is_global()
+
+    # Test large threshold
+    domain = [-150, 150, -65, 65]
+    extents = auto.Extents(domain, large_threshold=0.7)
+    assert not extents.is_global()
+
+
+def test_Extents_is_equatorial():
+    # Test whole globe
+    domain = [-180, 180, -90, 90]
+    extents = auto.Extents(domain)
+    assert extents.is_equatorial()
+
+    # Test region centred on equator
+    domain = [-10, 40, -30, 30]
+    extents = auto.Extents(domain)
+    assert extents.is_equatorial()
+
+    # Test region close to equator
+    domain = [-30, 20, -15, 45]
+    extents = auto.Extents(domain)
+    assert extents.is_equatorial()
+
+    # Test region on boundary
+    domain = [-30, 20, 20, 30]
+    extents = auto.Extents(domain)
+    assert not extents.is_equatorial()
+
+    # Test non-equatorial region
+    domain = [-30, 20, 60, 70]
+    extents = auto.Extents(domain)
+    assert not extents.is_equatorial()
+
+
+def test_Extents_is_polar():
+    # Test whole globe
+    domain = [-180, 180, -90, 90]
+    extents = auto.Extents(domain)
+    assert not extents.is_polar()
+
+    # Test region centred on north pole
+    domain = [-180, 180, 70, 90]
+    extents = auto.Extents(domain)
+    assert extents.is_polar()
+
+    # Test region close to north pole
+    domain = [-180, 180, 75, 85]
+    extents = auto.Extents(domain)
+    assert extents.is_polar()
+
+    # Test region centred on south pole
+    domain = [-180, 180, -90, -70]
+    extents = auto.Extents(domain)
+    assert extents.is_polar()
+
+    # Test region on boundary
+    domain = [-180, 180, 60, 90]
+    extents = auto.Extents(domain)
+    assert not extents.is_polar()
+
+    # Test non-polar region
+    domain = [-10, 40, 30, 70]
+    extents = auto.Extents(domain)
+    assert not extents.is_polar()
+
+
+def test_Extents_is_portrait_landscape_square():
+    # Test portrait
+    domain = [-10, 20, 30, 90]
+    extents = auto.Extents(domain)
+    assert extents.is_portrait()
+    assert not extents.is_landscape()
+    assert not extents.is_square()
+
+    # Test just above portrait boundary
+    domain = [-10, 20, 30, 69]
+    extents = auto.Extents(domain)
+    assert extents.is_portrait()
+    assert not extents.is_landscape()
+    assert not extents.is_square()
+
+    # Test on portrait boundary
+    domain = [-10, 20, 30, 66]
+    extents = auto.Extents(domain)
+    assert not extents.is_portrait()
+    assert not extents.is_landscape()
+    assert extents.is_square()
+
+    # Test landscape
+    domain = [-30, 20, 30, 60]
+    extents = auto.Extents(domain)
+    assert not extents.is_portrait()
+    assert extents.is_landscape()
+    assert not extents.is_square()
+
+    # Test just above landscape boundary
+    domain = [-19, 20, 30, 60]
+    extents = auto.Extents(domain)
+    assert not extents.is_portrait()
+    assert extents.is_landscape()
+    assert not extents.is_square()
+
+    # Test on landscape boundary
+    domain = [-16, 20, 30, 66]
+    extents = auto.Extents(domain)
+    assert not extents.is_portrait()
+    assert not extents.is_landscape()
+    assert extents.is_square()
+
+    # Test square
+    domain = [-10, 20, 30, 60]
+    extents = auto.Extents(domain)
+    assert not extents.is_portrait()
+    assert not extents.is_landscape()
+    assert extents.is_square()
+
+
+def test_Extents_is_large_small():
+    # Test whole globe
+    domain = [-180, 180, -90, 90]
+    extents = auto.Extents(domain)
+    assert not extents.is_large()
+    assert not extents.is_small()
+
+    # Test > 60% coverage but < 100%
+    domain = [-150, 150, -65, 65]
+    extents = auto.Extents(domain)
+    assert not extents.is_large()
+    assert not extents.is_small()
+
+    # Test < 60% coverage
+    domain = [-140, 140, -65, 65]
+    extents = auto.Extents(domain)
+    assert extents.is_large()
+    assert not extents.is_small()
+
+    # Test > 20% coverage byt < 60%
+    domain = [-100, 100, -40, 30]
+    extents = auto.Extents(domain)
+    assert extents.is_large()
+    assert not extents.is_small()
+
+    # Test 20% coverage
+    domain = [-80, 80, -40, 40]
+    extents = auto.Extents(domain)
+    assert not extents.is_large()
+    assert extents.is_small()

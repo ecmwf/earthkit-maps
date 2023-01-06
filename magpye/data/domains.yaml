@@ -1,3 +1,7 @@
+# The domain extents defined in this file do not imply the expression of any
+# opinion whatsoever on the part of ECMWF concerning the legal status of any
+# continent, country, territory or area or of its authorities, or concerning the
+# delimitation of its frontiers or boundaries.
 domains:
   # Domain bounds given as East, West, North, South
   europe:

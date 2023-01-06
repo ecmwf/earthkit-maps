@@ -108,11 +108,11 @@ class Global(Extents):
 
     def mutate(self):
         if not self.is_global():
-            return Euqatorial(self.extents)
+            return Equatorial(self.extents)
         return self
 
 
-class Euqatorial(Extents):
+class Equatorial(Extents):
     """A domain with a central longitude < ±25 degrees, covering < 20% of the globe."""
 
     CRS = _crs.PlateCarree
@@ -191,6 +191,12 @@ def get_optimal_crs(extents):
           aspect ratio is > 0.8, use an Albers Equal Area CRS.
         - If the central latitude falls between ±25 and ±75 degrees and the
           aspect ratio is < 0.8, use a Transverse Mercator CRS.
+
+    This method is adapted from the method used by https://projectionwizard.org,
+    which is discussed in the following article:
+    Šavrič, B., Jenny, B. and Jenny, H. (2016). Projection Wizard – An online
+    map projection selection tool. The Cartographic Journal, 53–2, p. 177–185.
+    Doi: 10.1080/00087041.2015.1131938.
 
     Parameters
     ----------
