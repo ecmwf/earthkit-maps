@@ -42,7 +42,7 @@ class _set:
 
 
 class Schema(dict):
-    """Class for containing and matining global style settings."""
+    """Class for containing and maintaining global style settings."""
 
     parsers = {
         "reference_crs": parse_crs,
