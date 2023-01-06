@@ -2,11 +2,11 @@ import os
 
 import yaml
 
-from magpye import definitions
+from magpye import _definitions
 from magpye.domains import parse_crs
 from magpye.utils import recursive_dict_update
 
-DEFAULT_SCHEMA = "default"
+_DEFAULT_SCHEMA = "default"
 
 
 class SchemaNotFoundError(FileNotFoundError):
@@ -30,25 +30,26 @@ class _set:
         }
 
         self.new_kwargs = [key for key in kwargs if key not in self.schema]
-        self.schema.update(**kwargs)
+        self.schema._update(**kwargs)
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.schema.update(**self.old_kwargs)
+        self.schema._update(**self.old_kwargs)
         for key in self.new_kwargs:
             self.schema.pop(key, None)
 
 
 class Schema(dict):
+    """Class for containing and matining global style settings."""
 
     parsers = {
         "reference_crs": parse_crs,
     }
 
     def __init__(self, **kwargs):
-        self.update(**kwargs)
+        self._update(**kwargs)
 
     def __getattr__(self, key):
         if key in self:
@@ -66,7 +67,7 @@ class Schema(dict):
     def __repr__(self):
         return f"{self.__class__.__name__}({super().__repr__()})"
 
-    def update(self, **kwargs):
+    def _update(self, **kwargs):
         for key, value in kwargs.items():
             if key in self.parsers:
                 value = self.parsers[key](value)
@@ -82,34 +83,78 @@ class Schema(dict):
         return decorator
 
     def _update_kwargs(self, kwargs):
-        return recursive_dict_update(self.to_dict(), kwargs)
+        return recursive_dict_update(self._to_dict(), kwargs)
 
-    def to_dict(self):
+    def _to_dict(self):
         d = dict()
         for key in self:
             value = getattr(self, key)
             if isinstance(value, type(self)):
-                value = value.to_dict()
+                value = value._to_dict()
             d[key] = value
         return d
 
     def set(self, **kwargs):
+        """
+        Set the value of a schema key.
+
+        Parameters
+        ----------
+        **kwargs
+            The schema keys and values to set.
+
+        Example
+        -------
+        >>> schema.set(font="verdana")
+        >>> with schema.set(font="comic sans"):
+        ...     print(schema.font)
+        ...
+        comic sans
+        >>> print(schema.font)
+        verdana
+        """
         return _set(self, **kwargs)
 
     def get(self, key):
+        """
+        Get the value of a schema key.
+
+        Parameters
+        ----------
+        key : str
+            The name of the schema key to get.
+
+        Example
+        -------
+        >>> schema.set(font="verdana")
+        >>> schema.get("font")
+        'verdana'
+        """
         return getattr(self, key)
 
     def use(self, name):
-        file_name = definitions.SCHEMA_DIR / f"{name}.yaml"
+        """
+        Use a named schema.
+
+        Parameters
+        ----------
+        name : str
+            The name of the schema to use.
+
+        Example
+        -------
+        >>> schema.use("default")
+        """
+        file_name = _definitions.SCHEMA_DIR / f"{name}.yaml"
         if not os.path.exists(file_name):
             raise SchemaNotFoundError(f"no schema '{name}' found")
         with open(file_name, "r") as f:
             kwargs = yaml.load(f, Loader=yaml.SafeLoader)
-        self.reset(**kwargs)
+        self._reset(**kwargs)
 
-    def reset(self, **kwargs):
+    def _reset(self, **kwargs):
         self.__init__(**kwargs)
 
 
 schema = Schema()
-schema.use(DEFAULT_SCHEMA)
+schema.use(_DEFAULT_SCHEMA)
