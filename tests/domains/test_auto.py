@@ -13,7 +13,7 @@ def test_preset():
         false_northing=3210000,
     )
 
-    bounds, crs = auto.get_domain_extents_and_crs("europe")
+    bounds, crs = auto.get_bounds_and_crs("europe")
 
     assert bounds == expected_bounds
     assert crs == expected_crs
@@ -32,7 +32,7 @@ def test_country():
         "lat_2": 49.6,
     }
 
-    bounds, crs = auto.get_domain_extents_and_crs("france")
+    bounds, crs = auto.get_bounds_and_crs("france")
 
     assert bounds == pytest.approx(expected_bounds, 0.5)
 
@@ -42,6 +42,37 @@ def test_country():
             assert crs_params[key] == pytest.approx(expected_crs_params[key], 1)
         else:
             assert crs_params[key] == expected_crs_params[key]
+
+
+def test_get_optimal_crs():
+    bounds = [-25, 40, 32, 72]
+    expected_crs_params = {
+        "ellps": "WGS84",
+        "proj": "aea",
+        "lon_0": 7.5,
+        "lat_0": 52.0,
+        "x_0": 0.0,
+        "y_0": 0.0,
+        "lat_1": 38.4,
+        "lat_2": 65.6,
+    }
+
+    crs = auto.get_optimal_crs(bounds)
+
+    assert crs.proj4_params == expected_crs_params
+
+
+def test_get_crs_extents():
+    bounds = [-25, 40, 32, 72]
+    crs = ccrs.AlbersEqualArea(
+        central_latitude=52, central_longitude=7.5, standard_parallels=(38.4, 65.6)
+    )
+
+    expected_bounds = [-3046054.6, 3046054.6, -2239135.9, 2497907.6]
+
+    result = auto.get_crs_extents(bounds, crs)
+
+    assert result == pytest.approx(expected_bounds, 0.5)
 
 
 def test_Extents_is_global():

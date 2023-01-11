@@ -249,7 +249,10 @@ def get_crs_extents(extents, crs, src_crs=None):
     """
     if src_crs is None:
         src_crs = schema.reference_crs
+
     min_lon, max_lon, min_lat, max_lat = extents
+    mid_lon = max_lon - (max_lon - min_lon) / 2
+
     corners = [
         crs.transform_point(min_lon, min_lat, src_crs),
         crs.transform_point(min_lon, max_lat, src_crs),
@@ -261,10 +264,9 @@ def get_crs_extents(extents, crs, src_crs=None):
     max_x = max([corner[0] for corner in corners])
     min_y = min([corner[1] for corner in corners])
     max_y = max([corner[1] for corner in corners])
-    mid_x = max_x - (max_x - min_x) / 2
 
-    mid_bottom = src_crs.transform_point(mid_x, min_y, crs)
-    mid_top = src_crs.transform_point(mid_x, max_y, crs)
+    mid_bottom = crs.transform_point(mid_lon, min_lat, src_crs)
+    mid_top = crs.transform_point(mid_lon, max_lat, src_crs)
 
     min_y = min(min_y, mid_bottom[1])
     max_y = max(max_y, mid_top[1])
@@ -312,7 +314,7 @@ def get_bounds(geom, crs=None):
     return [xmin, xmax, ymin, ymax]
 
 
-def get_domain_extents_and_crs(domain, crs=None, padding=0.1):
+def get_bounds_and_crs(domain, crs=None, padding=0.1):
     """
     Get an optimal bounding box and CRS for a named domain.
 
