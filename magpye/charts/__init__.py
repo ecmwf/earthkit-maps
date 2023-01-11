@@ -45,11 +45,12 @@ class Chart:
         does not match the figsize.
     """
 
-    def __init__(self, *, domain=None, crs=None, domain_crs=None, figsize=(10, 10)):
+    def __init__(self, domain=None, crs=None, domain_crs=None, figsize=(10, 10)):
         self._domain = domain
         self._crs = crs
         self._domain_crs = domain_crs
         self._bounds = None
+        self._boundless = False
 
         self._queue = []
 
@@ -85,7 +86,7 @@ class Chart:
 
     @property
     def bounds(self):
-        if self._bounds is None:
+        if self._bounds is None and not self._boundless:
             self._setup_domain()
         return self._bounds
 
@@ -111,6 +112,9 @@ class Chart:
                 self._bounds, self._crs = auto.get_bounds_and_crs(
                     self._domain, self._crs
                 )
+            elif self._domain is None:
+                self._crs = self._crs or schema.reference_crs
+                self._boundless = True
             else:
                 raise ValueError(
                     f"'domain' must be str or list; got {type(self._domain)}"
