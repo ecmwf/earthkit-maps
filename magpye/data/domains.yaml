@@ -31,7 +31,7 @@ domains:
       central_longitude: 85
 
 
-  north atlantic: [-50, 35, 32, 60]
+  north atlantic: [-50, 35, 32, 72]
   north america: [-140, -60, 2, 85]
   south america: [-87, -32, 17, -57]
   continental united states: [-120, -72, 24, 48]
