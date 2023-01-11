@@ -358,7 +358,7 @@ def get_bounds_and_crs(domain, crs=None, padding=0.1):
             bounds = config.get("bounds")
             domain_crs = config.get("crs")
         if crs is not None:
-            bounds = get_crs_extents(bounds, crs, domain_crs)
+            crs_bounds = get_crs_extents(bounds, crs, parse_crs(domain_crs))
         else:
             crs = parse_crs(domain_crs or get_optimal_crs(bounds))
             crs_bounds = bounds

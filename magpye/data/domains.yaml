@@ -23,7 +23,13 @@ domains:
 
   arctic: [-180, 180, 70, 90]
 
-  asia: [40, 130, -5, 110]
+  asia:
+    bounds: [-6000000, 6000000, -7500000, 5000000]
+    crs:
+      name: TransverseMercator
+      central_latitude: 52.5
+      central_longitude: 85
+
 
   north atlantic: [-50, 35, 32, 60]
   north america: [-140, -60, 2, 85]
