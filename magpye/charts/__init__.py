@@ -16,7 +16,34 @@ def await_crs(method):
 
 
 class Chart:
-    """The base chart from which all other magpye charts inherit."""
+    """
+    A geospatial chart containing a single axis.
+
+    Parameters
+    ----------
+    domain : str or list (optional)
+        Must be either:
+            - A string naming the domain to use for the chart (e.g. a country,
+              continent or state/province).
+            - A list containing the bounding box of the domain, in the order
+              `[min_x, max_x, min_y, max_y]`. The bounding box is assumed to be
+              defined in terms of latitude and longitude values, unless the
+              `domain_crs` argument is also passed, in which case the bounding
+              box must be defined using `domain_crs` coordinates.
+        If no domain is passed, the chart will attempt to use the best domain
+        to fit the first field of data plotted on the chart.
+    crs : cartopy.crs.CRS (optional)
+        The coordinate reference system to use for this chart. If `None`
+        (default), will attempt to find the best CRS to suit the bounding box
+        of the chart.
+    domain_crs : cartopy.crs.CRS (optional)
+        Use with `domain` to specify the coordinate system on which the domain
+        bounding box is defined.
+    figsize : list (optional)
+        The width and height (in inches) of the chart. Note that the width of
+        the chart may be adjusted slightly if the aspect ratio of your chart
+        does not match the figsize.
+    """
 
     def __init__(self, *, domain=None, crs=None, domain_crs=None, figsize=(10, 10)):
         self._domain = domain
@@ -92,23 +119,28 @@ class Chart:
     @await_crs
     @schema.coastlines.apply()
     def coastlines(self, **kwargs):
+        """Add coastal outlines from the Natural Earth “coastline” shapefile collection."""
         return self.axis.coastlines(**kwargs)
 
     @await_crs
     @schema.borders.apply()
     def borders(self, **kwargs):
+        """Add political boundaries from the Natural Earth administrative shapefile collection."""
         return self.axis.add_feature(cfeature.BORDERS, **kwargs)
 
     @await_crs
     @schema.gridlines.apply()
     def gridlines(self, **kwargs):
+        """Add latitude and longitude gridlines."""
         return self.axis.gridlines(**kwargs)
 
     @await_crs
     def land(self, **kwargs):
+        """Add land polygons from the Natural Earth "land" shapefile collection."""
         return self.axis.add_feature(cfeature.LAND, **kwargs)
 
     def show(self):
+        """Display the chart."""
         while len(self._queue):
             method, args, kwargs = self._queue.pop(0)
             method(self, *args, **kwargs)
