@@ -1,3 +1,9 @@
+import os
+from functools import partial
+from pathlib import Path
+
+import cartopy
+import matplotlib
 import pytest
 
 from magpye import charts, schema
@@ -45,3 +51,56 @@ def test_Chart_bounds_and_crs():
             assert crs_params[key] == pytest.approx(expected_crs_params[key], 1)
         else:
             assert crs_params[key] == expected_crs_params[key]
+
+
+@pytest.fixture
+def dummy_chart():
+    path = Path(__file__).parent / "temporary-chart.png"
+    chart = charts.Chart()
+    chart.temporary_save = partial(chart.save, path)
+    yield chart
+    os.remove(path)
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_Chart_coastlines(dummy_chart):
+    basic_children = dummy_chart.axis.get_children()
+
+    dummy_chart.coastlines()
+    dummy_chart.temporary_save()
+    new_children = dummy_chart.axis.get_children()
+    assert len(new_children) == len(basic_children) + 1
+    assert isinstance(new_children[0], cartopy.mpl.feature_artist.FeatureArtist)
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_Chart_gridlines(dummy_chart):
+    basic_children = dummy_chart.axis.get_children()
+
+    dummy_chart.gridlines()
+    dummy_chart.temporary_save()
+    new_children = dummy_chart.axis.get_children()
+    assert len(new_children) > len(basic_children)
+    assert isinstance(new_children[0], matplotlib.collections.LineCollection)
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_Chart_borders(dummy_chart):
+    basic_children = dummy_chart.axis.get_children()
+
+    dummy_chart.borders()
+    dummy_chart.temporary_save()
+    new_children = dummy_chart.axis.get_children()
+    assert len(new_children) == len(basic_children) + 1
+    assert isinstance(new_children[0], cartopy.mpl.feature_artist.FeatureArtist)
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_Chart_land(dummy_chart):
+    basic_children = dummy_chart.axis.get_children()
+
+    dummy_chart.land()
+    dummy_chart.temporary_save()
+    new_children = dummy_chart.axis.get_children()
+    assert len(new_children) == len(basic_children) + 1
+    assert isinstance(new_children[0], cartopy.mpl.feature_artist.FeatureArtist)

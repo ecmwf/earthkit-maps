@@ -148,7 +148,12 @@ class Chart:
             method, args, kwargs = self._queue.pop(0)
             method(self, *args, **kwargs)
 
-    def show(self):
+    def show(self, *args, **kwargs):
         """Display the chart."""
         self._release_queue()
-        plt.show()
+        plt.show(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        """Save the chart."""
+        self._release_queue()
+        plt.savefig(*args, **kwargs)
