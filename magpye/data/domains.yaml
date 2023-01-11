@@ -38,3 +38,8 @@ domains:
 
 alternate_names:
   continental united states: [CONUS]
+  united states: [USA, United States of America]
+  united kingdom: [UK, GB, Great Britain]
+  russian federation: [Russia]
+  republic of korea: [South Korea]
+  dem. rep. korea: [North Korea, DPRK]
