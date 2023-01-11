@@ -143,9 +143,12 @@ class Chart:
         """Add land polygons from the Natural Earth "land" shapefile collection."""
         return self.axis.add_feature(cfeature.LAND, **kwargs)
 
-    def show(self):
-        """Display the chart."""
+    def _release_queue(self):
         while len(self._queue):
             method, args, kwargs = self._queue.pop(0)
             method(self, *args, **kwargs)
+
+    def show(self):
+        """Display the chart."""
+        self._release_queue()
         plt.show()

@@ -44,6 +44,31 @@ def test_country():
             assert crs_params[key] == expected_crs_params[key]
 
 
+def test_alias():
+    expected_bounds = [-363796, 373425, -541558, 545791]
+    expected_crs_params = {
+        "ellps": "WGS84",
+        "proj": "aea",
+        "lon_0": -2.9,
+        "lat_0": 54.3,
+        "x_0": 0.0,
+        "y_0": 0.0,
+        "lat_1": 51.3,
+        "lat_2": 57.2,
+    }
+
+    bounds, crs = auto.get_bounds_and_crs("UK")
+
+    assert bounds == pytest.approx(expected_bounds, 0.5)
+
+    crs_params = crs.proj4_params
+    for key in expected_crs_params:
+        if isinstance(crs_params[key], (int, float)):
+            assert crs_params[key] == pytest.approx(expected_crs_params[key], 1)
+        else:
+            assert crs_params[key] == expected_crs_params[key]
+
+
 def test_get_optimal_crs():
     bounds = [-25, 40, 32, 72]
     expected_crs_params = {
