@@ -23,12 +23,23 @@ domains:
 
   arctic: [-180, 180, 70, 90]
 
-  asia: [40, 130, -5, 110]
+  asia:
+    bounds: [-6000000, 6000000, -7500000, 5000000]
+    crs:
+      name: TransverseMercator
+      central_latitude: 52.5
+      central_longitude: 85
 
-  north atlantic: [-50, 35, 32, 60]
+
+  north atlantic: [-50, 35, 32, 72]
   north america: [-140, -60, 2, 85]
   south america: [-87, -32, 17, -57]
   continental united states: [-120, -72, 24, 48]
 
 alternate_names:
   continental united states: [CONUS]
+  united states: [USA, United States of America]
+  united kingdom: [UK, GB, Great Britain]
+  russian federation: [Russia]
+  republic of korea: [South Korea]
+  dem. rep. korea: [North Korea, DPRK]
