@@ -308,6 +308,7 @@ def get_bounds(geom, crs=None):
 
     xmin = min(x)
     xmax = max(x)
+
     ymin = min(y)
     ymax = max(y)
 

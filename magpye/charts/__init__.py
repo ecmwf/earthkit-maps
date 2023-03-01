@@ -1,8 +1,13 @@
+import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
+import numpy as np
 
-from magpye.domains import auto
+from magpye import inputs
+from magpye.domains import auto, parse_crs
 from magpye.schema import schema
+
+from . import _fonts, layers, styles, titles  # noqa: F401
 
 
 def await_crs(method):
@@ -48,6 +53,8 @@ class Chart:
     def __init__(self, domain=None, crs=None, domain_crs=None, figsize=(10, 10)):
         self._domain = domain
         self._crs = crs
+        if self._crs is not None:
+            self._crs = parse_crs(self._crs)
         self._domain_crs = domain_crs
         self._bounds = None
         self._boundless = False
@@ -57,12 +64,12 @@ class Chart:
         self._fig = None
         self._figsize = figsize
 
-        self._axis = None
+        self._ax = None
 
         self._cbar_axes = None
         self._cbar_locations = None
 
-        self._layers = dict()
+        self._layers = []
 
     @staticmethod
     def close_current_fig():
@@ -77,18 +84,31 @@ class Chart:
         return self._fig
 
     @property
-    def axis(self):
-        if self._axis is None:
-            self._axis = self.fig.add_subplot(1, 1, 1, projection=self.crs)
+    def ax(self):
+        if self._ax is None:
+            self._ax = self.fig.add_subplot(1, 1, 1, projection=self.crs)
             if self.bounds is not None:
-                self._axis.set_extent(self.bounds, crs=self.crs)
-        return self._axis
+                self._ax.set_extent(self.bounds, crs=self.crs)
+        return self._ax
+
+    @property
+    def size(self):
+        bbox = self.ax.get_position()
+        return bbox.width, bbox.height
+
+    def is_portrait(self):
+        value = self.size[0] < self.size[1]
+        return value
 
     @property
     def bounds(self):
         if self._bounds is None and not self._boundless:
             self._setup_domain()
         return self._bounds
+
+    @property
+    def lat_lon_bounds(self):
+        return auto.get_crs_extents(self.bounds, ccrs.PlateCarree(), self.crs)
 
     @property
     def crs(self):
@@ -120,28 +140,96 @@ class Chart:
                     f"'domain' must be str or list; got {type(self._domain)}"
                 )
 
+    @styles.dynamic(normalize=True)
+    @layers.append
+    @inputs.extract()
+    def mesh(self, data, *args, x=None, y=None, **kwargs):
+        kwargs.pop("levels", None)
+        return self.ax.pcolormesh(x, y, data, *args, **kwargs)
+
+    @styles.dynamic(normalize=True)
+    @layers.append
+    @inputs.extract()
+    def filled_contours(
+        self, data, *args, x=None, y=None, transform_first=True, **kwargs
+    ):
+        x, y = np.meshgrid(x, y)
+        return self.ax.contourf(
+            x, y, data, *args, transform_first=transform_first, **kwargs
+        )
+
+    @schema.apply("font")
+    @schema.legend.apply()
+    def legend(self, *args, **kwargs):
+        layer = self._layers[-1]
+        if layer.legend is not False:
+            return layer.legend(*args, chart=self, **kwargs)
+
+    def _resize_colorbars(self):
+        p = self.ax.get_position()
+
+        offset = {"right": 0, "left": 0, "bottom": 0, "top": 0}
+
+        for layer in self._layers:
+            if layer._legend_location is None:
+                continue
+            position = {
+                "right": [
+                    p.x0 + p.width + 0.01 + offset["right"],
+                    p.y0,
+                    0.03,
+                    p.height,
+                ],
+                "left": [p.x0 - 0.04 - offset["left"], p.y0, 0.03, p.height],
+                "bottom": [p.x0, p.y0 - 0.04 - offset["bottom"], p.width, 0.03],
+                "top": [p.x0, p.y0 + p.height + 0.04 + offset["top"], p.width, 0.03],
+            }[layer._legend_location]
+            offset[layer._legend_location] += 0.1
+            layer._legend_ax.set_position(position)
+
     @await_crs
     @schema.coastlines.apply()
     def coastlines(self, **kwargs):
         """Add coastal outlines from the Natural Earth “coastline” shapefile collection."""
-        return self.axis.coastlines(**kwargs)
+        return self.ax.coastlines(**kwargs)
 
     @await_crs
     @schema.borders.apply()
     def borders(self, **kwargs):
         """Add political boundaries from the Natural Earth administrative shapefile collection."""
-        return self.axis.add_feature(cfeature.BORDERS, **kwargs)
+        return self.ax.add_feature(cfeature.BORDERS, **kwargs)
+
+    @await_crs
+    @schema.roads.apply()
+    def roads(self, resolution="50m", **kwargs):
+        """Add roads from the Natural Earth cultural shapefile collection."""
+        feature = cfeature.NaturalEarthFeature("cultural", "roads", "10m")
+
+        return self.ax.add_feature(feature, **kwargs)
 
     @await_crs
     @schema.gridlines.apply()
     def gridlines(self, **kwargs):
         """Add latitude and longitude gridlines."""
-        return self.axis.gridlines(**kwargs)
+        return self.ax.gridlines(**kwargs)
 
     @await_crs
     def land(self, **kwargs):
         """Add land polygons from the Natural Earth "land" shapefile collection."""
-        return self.axis.add_feature(cfeature.LAND, **kwargs)
+        return self.ax.add_feature(cfeature.LAND, **kwargs)
+
+    @schema.apply("font")
+    @schema.title.apply()
+    def title(self, *args, **kwargs):
+        if args:
+            label = args[0]
+            args = args[1:]
+        else:
+            label = kwargs.pop("labels", None)
+        label = titles.format_string(self, label)
+
+        plt.sca(self.ax)
+        plt.title(label, *args, **kwargs)
 
     def _release_queue(self):
         while len(self._queue):
