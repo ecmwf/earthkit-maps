@@ -158,6 +158,39 @@ class Chart:
             x, y, data, *args, transform_first=transform_first, **kwargs
         )
 
+    @layers.append
+    @inputs.extract()
+    @schema.contour.apply()
+    def contour(
+        self,
+        data,
+        *args,
+        x=None,
+        y=None,
+        labels=False,
+        label_fontsize=7,
+        label_colors=None,
+        label_frequency=1,
+        label_background=None,
+        **kwargs,
+    ):
+        if "cmap" in kwargs and "colors" in kwargs:
+            kwargs.pop("colors")
+        contours = self.ax.contour(x, y, data, *args, **kwargs)
+        if labels:
+            clabels = self.ax.clabel(
+                contours,
+                contours.levels[0::label_frequency],
+                inline=True,
+                fontsize=label_fontsize,
+                colors=label_colors,
+                inline_spacing=2,
+            )
+            if label_background is not None:
+                for label in clabels:
+                    label.set_backgroundcolor(label_background)
+        return contours
+
     @schema.apply("font")
     @schema.legend.apply()
     def legend(self, *args, **kwargs):

@@ -41,6 +41,7 @@ def extract_xy(
     dataset = xr.Dataset(data.to_xarray()).squeeze()
     data = emohawk.open(dataset)
 
+    # # TODO: Introduce pre-plot slicing in a different PR
     # if bounds is not None:
     #     crs_bounds = auto.get_crs_extents(bounds, src_crs, crs)
     #     dataset = xr.Dataset(data.to_xarray()).squeeze()
