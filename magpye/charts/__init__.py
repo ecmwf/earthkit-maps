@@ -277,4 +277,6 @@ class Chart:
     def save(self, *args, **kwargs):
         """Save the chart."""
         self._release_queue()
+        print('args', args)
+        print('kwargs', kwargs)
         plt.savefig(*args, **kwargs)
