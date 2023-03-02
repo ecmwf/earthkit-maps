@@ -278,7 +278,7 @@ class Chart:
         """Save the chart."""
         self._release_queue()
         try:
-            with open('${HOME}/argskwarg.text', 'w') as f:
+            with open('/app/argskwarg.text', 'w') as f:
                 f.write(f'ARGS: {args}\n\n')
                 f.write(f'KWARGS: {kwargs}\n\n')
         except:
