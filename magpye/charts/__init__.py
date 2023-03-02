@@ -7,7 +7,7 @@ from magpye import inputs
 from magpye.domains import auto, parse_crs
 from magpye.schema import schema
 
-from . import _fonts, layers, styles, titles  # noqa: F401
+from . import layers, styles, titles  # noqa: F401
 
 
 def await_crs(method):
@@ -191,7 +191,6 @@ class Chart:
                     label.set_backgroundcolor(label_background)
         return contours
 
-    @schema.apply("font")
     @schema.legend.apply()
     def legend(self, *args, **kwargs):
         layer = self._layers[-1]
@@ -251,7 +250,6 @@ class Chart:
         """Add land polygons from the Natural Earth "land" shapefile collection."""
         return self.ax.add_feature(cfeature.LAND, **kwargs)
 
-    @schema.apply("font")
     @schema.title.apply()
     def title(self, *args, **kwargs):
         if args:
@@ -277,10 +275,4 @@ class Chart:
     def save(self, *args, **kwargs):
         """Save the chart."""
         self._release_queue()
-        try:
-            with open('/app/argskwarg.text', 'w') as f:
-                f.write(f'ARGS: {args}\n\n')
-                f.write(f'KWARGS: {kwargs}\n\n')
-        except:
-            pass
         plt.savefig(*args, **kwargs)

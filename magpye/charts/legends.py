@@ -49,7 +49,6 @@ def legend(
     orientation=None,
     location=None,
     title=None,
-    font=None,
     **kwargs,
 ):
     if data_layer._legend is False:
@@ -93,13 +92,11 @@ def legend(
         titles.colorbar_title(title, data_layer),
         rotation=rotation,
         labelpad=labelpad,
-        font=font,
     )
 
     ticks = {
         "vertical": data_layer._legend.ax.get_yticklabels(),
         "horizontal": data_layer._legend.ax.get_xticklabels(),
     }[orientation]
-    [tick.set_font(font) for tick in ticks]
 
     chart._resize_colorbars()
