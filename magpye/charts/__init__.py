@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from magpye import inputs
-from magpye.domains import auto, parse_crs
+from magpye.domains import auto, projections, parse_crs
 from magpye.schema import schema
 
 from . import _fonts, layers, styles, titles  # noqa: F401
@@ -150,10 +150,11 @@ class Chart:
     @styles.dynamic(normalize=True)
     @layers.append
     @inputs.extract()
-    def filled_contours(
+    def shaded_contour(
         self, data, *args, x=None, y=None, transform_first=True, **kwargs
     ):
-        x, y = np.meshgrid(x, y)
+        if self.crs.__class__.__name__ in projections.FIXED_CRSS:
+            transform_first = False
         return self.ax.contourf(
             x, y, data, *args, transform_first=transform_first, **kwargs
         )
@@ -172,11 +173,15 @@ class Chart:
         label_colors=None,
         label_frequency=1,
         label_background=None,
+        transform_first=True,
         **kwargs,
     ):
+        if self.crs.__class__.__name__ in projections.FIXED_CRSS:
+            transform_first = False
         if "cmap" in kwargs and "colors" in kwargs:
             kwargs.pop("colors")
-        contours = self.ax.contour(x, y, data, *args, **kwargs)
+        contours = self.ax.contour(
+            x, y, data, *args, transform_first=transform_first, **kwargs)
         if labels:
             clabels = self.ax.clabel(
                 contours,

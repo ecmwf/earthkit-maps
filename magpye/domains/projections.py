@@ -1,9 +1,12 @@
 import warnings
 
 import cartopy.crs as ccrs
-import emohawk
 import pyproj
-import xarray as xr
+
+
+
+FIXED_CRSS = ["NorthPolarStereo", "SouthPolarStereo"]
+
 
 PROJ4_CRS = {
     "laea": {
@@ -17,8 +20,8 @@ PROJ4_CRS = {
     }
 }
 
-
-def proj4_to_ccrs(proj4_string):
+def proj_to_ccrs(proj4_string):
+    
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         params = pyproj.CRS.from_proj4(proj4_string).to_dict()
@@ -28,21 +31,3 @@ def proj4_to_ccrs(proj4_string):
     kwargs = ccrs_setup["kwargs"]
 
     return crs(**{kwarg: params[kwargs[kwarg]] for kwarg in kwargs})
-
-
-def get_crs(data):
-    data = xr.Dataset(emohawk.open(data).to_xarray())
-    var = list(data.data_vars)[0]
-
-    proj4_string = None
-    if "proj4_string" in data[var].attrs:
-        proj4_string = data[var].attrs["proj4_string"]
-    elif "grid_mapping" in data[var].attrs:
-        proj4_string = data[data[var].attrs["grid_mapping"]].attrs["proj4_params"]
-
-    if proj4_string is not None:
-        crs = proj4_to_ccrs(proj4_string)
-    else:
-        crs = ccrs.PlateCarree()
-
-    return crs

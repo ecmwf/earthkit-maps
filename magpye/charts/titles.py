@@ -75,7 +75,7 @@ def get_metadata(layers, attr, layer=None):
     labels = []
     for data in data_layers:
 
-        data = emohawk.open(data).to_xarray()
+        data = emohawk.from_source("file", data).to_xarray()
 
         preference = [attr]
         if attr in METADATA:
@@ -133,7 +133,7 @@ def title_string(string):
 
 
 def _default_title(self):
-    times = [emohawk.open(layer.data).axis("t").values.item() for layer in self._layers]
+    times = [emohawk.from_source("file", layer.data).to_datetime() for layer in self._layers]
     if len(set(times)) == 1:
         label = "{variable_name} at {time!0:%H:%M} on {time!0:%Y-%m-%d}"
     else:

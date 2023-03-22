@@ -1,15 +1,19 @@
+import warnings
+
 import emohawk
 import numpy as np
-import xarray as xr
+import cv2
 
 from cartopy.util import add_cyclic_point
+import cartopy.crs as ccrs
 
-from magpye.domains import projections, auto
+from magpye.domains import projections, parse_crs, auto
 from magpye.schema import schema
 
 X_RESOLUTION = 1000
 Y_RESOLUTION = 1000
 
+DEFAULT_PROJ = ccrs.PlateCarree()
 
 COMMON_VARIABLES = {
     "u": ["u", "u10"],
@@ -33,50 +37,75 @@ def get_data_var(data, variable):
     return variable
 
 
+def force_minus_180_to_180(x):
+    return (x + 180) % 360 - 180
+
+
+def roll_from_0_360_to_minus_180_180(x):
+    return np.argwhere(x[0]>=180)[0][0]
+
+
+def roll_from_minus_180_180_to_0_360(x):
+    return np.argwhere(x[0]>=0)[0][0]
+
+
+def force_0_to_360(x):
+    return x % 360
+
+
 def extract_xy(
-    data, x=None, y=None, src_crs=None, crs=None, bounds=None, data_vars=None
+    field, x=None, y=None, src_crs=None, crs=None, bounds=None, data_vars=None
 ):
-    data = emohawk.open(data)
+    points = field.to_points(flatten=False)
+    values = field.to_numpy(flatten=False)
+    
+    if bounds is not None and crs.__class__.__name__ not in projections.FIXED_CRSS:
+        crs_bounds = auto.get_crs_extents(bounds, src_crs, crs)
+        
+        roll_by = None
+        if src_crs.__class__.__name__ in auto.CYCLIC_SYSTEMS:
+            if crs_bounds[0] < 0 and crs_bounds[1] > 0:
+                if crs_bounds[0] < points["x"].min():
+                    roll_by = roll_from_0_360_to_minus_180_180(points["x"])
+                    points["x"] = force_minus_180_to_180(points["x"])
+                    for i in range(2):
+                        crs_bounds[i] = force_minus_180_to_180(crs_bounds[i])
+            elif crs_bounds[0] < 180 and crs_bounds[1] > 180:
+                if crs_bounds[1] > points["x"].max():
+                    roll_by = roll_from_minus_180_180_to_0_360(points["x"])
+                    points["x"] = force_0_to_360(points["x"])
+                    for i in range(2):
+                        crs_bounds[i] = force_0_to_360(crs_bounds[i])
+        if roll_by is not None:
+            points["x"] = np.roll(points["x"], roll_by, axis=1)
+            points["y"] = np.roll(points["y"], roll_by, axis=1)
+            values = np.roll(values, roll_by, axis=1)
+        
+        bbox = np.where(
+            (points["x"] >= crs_bounds[0]) &
+            (points["x"] <= crs_bounds[1]) &
+            (points["y"] >= crs_bounds[2]) &
+            (points["y"] <= crs_bounds[3]),
+            True, False
+        )
+                        
+        kernel = np.ones((3, 3), dtype='uint8')
+        bbox = cv2.dilate(bbox.astype('uint8'), kernel).astype(bool)
+        
+        shape = bbox[np.ix_(np.any(bbox, axis=1),np.any(bbox, axis=0))].shape
+        
+        points["x"] = points["x"][bbox].reshape(shape)
+        points["y"] = points["y"][bbox].reshape(shape)
+        values = values[bbox].reshape(shape)
 
-    dataset = xr.Dataset(data.to_xarray()).squeeze()
-    data = emohawk.open(dataset)
+    # try:
+    #     for i, item in enumerate(values):
+    #         values[i], points["x"] = add_cyclic_point(item, coord=points["x"])
+    # except:  # noqa: E722
+    #     # TODO: Decide what to do with un-cyclifiable data
+    #     pass
 
-    # # TODO: Introduce pre-plot slicing in a different PR
-    # if bounds is not None:
-    #     crs_bounds = auto.get_crs_extents(bounds, src_crs, crs)
-    #     dataset = xr.Dataset(data.to_xarray()).squeeze()
-    #     dataset.coords[data.axis("x").name] = (dataset.coords[data.axis("x").name] + 180) % 360 - 180
-    #     dataset = dataset.sortby(getattr(dataset, data.axis("x").name))
-
-    #     dataset = dataset.sel(
-    #         **{
-    #             data.axis("x").name: slice(*crs_bounds[:2]),
-    #             data.axis("y").name: slice(*crs_bounds[2:]),
-    #         }
-    #     )
-
-    #     data = emohawk.open(dataset)
-
-    x_values = _extract_axis(data, x=x)
-    y_values = _extract_axis(data, y=y)
-
-    dataset = xr.Dataset(data.to_xarray()).squeeze()
-    if data_vars is None:
-        data_values = [dataset[list(dataset.data_vars)[0]].values]
-    else:
-        data_values = [dataset[get_data_var(dataset, var)].values for var in data_vars]
-
-    try:
-        for i, item in enumerate(data_values):
-            data_values[i], x_values = add_cyclic_point(item, coord=x_values)
-    except:  # noqa: E722
-        # TODO: Decide what to do with un-cyclifiable data
-        pass
-
-    if len(data_values) == 1:
-        data_values = data_values[0]
-
-    return data_values, x_values, y_values
+    return values, points["x"], points["y"]
 
 
 def _extract_axis(data, **kwargs):
@@ -93,26 +122,41 @@ def _extract_axis(data, **kwargs):
 def extract(data_vars=None):
     def wrapper(method):
         def sanitised_method(self, data, *args, x=None, y=None, **kwargs):
-            crs = projections.get_crs(data)
+            
+            fields = emohawk.from_source("file", data)
+            
+            # TODO: iteration over fields
+            for field in fields[:1]:
+            
+                try:
+                    proj_string = field.to_proj()[0]
+                except AttributeError as err:
+                    warnings.warn(f"{err}; assuming {schema.reference_crs} CRS")
+                    crs = parse_crs(schema.reference_crs)
+                else:
+                    if proj_string is None:
+                        crs = parse_crs(schema.reference_crs)
+                    else:
+                        crs = projections.proj_to_ccrs(proj_string)
 
-            if self._domain and not self._bounds:
-                bounds = self.bounds
-                chart_crs = self.crs
-            else:
-                bounds = self._bounds
-                chart_crs = self._crs
+                if self._domain and not self._bounds:
+                    bounds = self.bounds
+                    chart_crs = self.crs
+                else:
+                    bounds = self._bounds
+                    chart_crs = self._crs
 
-            data, x, y = extract_xy(
-                data, x, y, crs, chart_crs, bounds, data_vars=data_vars
-            )
+                values, x, y = extract_xy(
+                    field, x, y, crs, chart_crs, bounds, data_vars=data_vars
+                )
 
-            if self._bounds is None and self._crs is None and self._domain is None:
-                self._crs = crs
+                if self._bounds is None and self._crs is None and self._domain is None:
+                    self._crs = crs
 
-            self._setup_domain()
-            kwargs["transform"] = kwargs.get("transform", crs)
+                self._setup_domain()
+                kwargs["transform"] = kwargs.get("transform", crs)
 
-            return method(self, data, *args, x=x, y=y, **kwargs)
+                return method(self, values, *args, x=x, y=y, **kwargs)
 
         return sanitised_method
 

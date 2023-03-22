@@ -12,6 +12,7 @@ domains:
       central_longitude: 10
       false_easting: 4321000
       false_northing: 3210000
+
   central europe: [2, 24, 45, 55]
   northeast europe: [15, 40, 45, 72]
   northwest europe: [-25, 15, 45, 72]
@@ -21,15 +22,16 @@ domains:
 
   africa: [-22, 54, -37, 40]
 
-  arctic: [-180, 180, 70, 90]
-
+  arctic: 
+    bounds: [-4000000, 4000000, -4000000, 4000000]
+    crs:
+      name: NorthPolarStereo
   asia:
     bounds: [-6000000, 6000000, -7500000, 5000000]
     crs:
       name: TransverseMercator
       central_latitude: 52.5
       central_longitude: 85
-
 
   north atlantic: [-50, 35, 32, 72]
   north america: [-140, -60, 2, 85]

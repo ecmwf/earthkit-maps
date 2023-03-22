@@ -1,6 +1,6 @@
 # Style
 font: Open Sans
-default_style: turbo
+default_style: magma
 
 # Projections and interpolation
 reference_crs: PlateCarree

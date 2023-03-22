@@ -15,6 +15,8 @@ NATURAL_EARTH_SOURCES = {
     "admin_1_states_provinces": "name_en",
 }
 
+CYCLIC_SYSTEMS = ["PlateCarree", "Mercator"]
+
 
 class Extents:
 
@@ -249,6 +251,8 @@ def get_crs_extents(extents, crs, src_crs=None):
     """
     if src_crs is None:
         src_crs = schema.reference_crs
+    
+    ll_grid = crs.__class__.__name__ in CYCLIC_SYSTEMS
 
     min_lon, max_lon, min_lat, max_lat = extents
     mid_lon = max_lon - (max_lon - min_lon) / 2
@@ -260,16 +264,24 @@ def get_crs_extents(extents, crs, src_crs=None):
         crs.transform_point(max_lon, min_lat, src_crs),
     ]
 
-    min_x = min([corner[0] for corner in corners])
-    max_x = max([corner[0] for corner in corners])
-    min_y = min([corner[1] for corner in corners])
-    max_y = max([corner[1] for corner in corners])
+    min_x = min([corner[0] for corner in corners[:2]])
+    max_x = max([corner[0] for corner in corners[2:4]])
+    min_y = min([corner[1] for corner in [corners[0], corners[-1]]])
+    max_y = max([corner[1] for corner in corners[1:3]])
+
+    if ll_grid and ((abs(corners[2][0] - corners[3][0]) > 180) or (abs(corners[0][0] - corners[1][0]) > 180)):
+        min_x = min([corner[0]%360 for corner in corners[:2]])
+        max_x = max([corner[0]%360 for corner in corners[2:4]])
 
     mid_bottom = crs.transform_point(mid_lon, min_lat, src_crs)
     mid_top = crs.transform_point(mid_lon, max_lat, src_crs)
 
     min_y = min(min_y, mid_bottom[1])
     max_y = max(max_y, mid_top[1])
+    
+    if min_x > max_x and ll_grid:
+        min_x %= 360
+        max_x %= 360
 
     return [min_x, max_x, min_y, max_y]
 
