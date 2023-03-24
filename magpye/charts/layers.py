@@ -1,4 +1,6 @@
 
+import emohawk
+
 
 class DataLayer:
 
@@ -14,6 +16,8 @@ class DataLayer:
 
 def append(method):
     def wrapper(self, data, *args, legend=True, **kwargs):
+        if isinstance(data, str):
+            data = emohawk.from_source("file", data)
         layer = method(self, data, *args, **kwargs)
         self._layers.append(DataLayer(data, layer, legend))
         self._release_queue()

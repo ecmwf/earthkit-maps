@@ -4,6 +4,9 @@ import emohawk
 from pandas import Timestamp
 
 
+from magpye import _data
+
+
 NO_CFUNITS = False
 try:
     from cf_units.tex import tex
@@ -12,7 +15,7 @@ except ImportError:
 
 METADATA = {
     "variable_name": {
-        "preference": ["long_name", "standard_name", "short_name", "name"],
+        "preference": ["long_name", "standard_name", "name", "short_name"],
     }
 }
 
@@ -67,52 +70,66 @@ class TitleFormatter(Formatter):
 
 
 def get_metadata(layers, attr, layer=None):
-
-    data_layers = [lyr.data for lyr in layers]
     if layer is not None:
-        data_layers = [data_layers[layer]]
-
+        layers = [layers[layer]]
+    
     labels = []
-    for data in data_layers:
-
-        data = emohawk.from_source("file", data).to_xarray()
-
-        preference = [attr]
-        if attr in METADATA:
-            preference = METADATA[attr]["preference"] + preference
-
-        try:
-            data = data[list(data.data_vars)[0]]
-        except AttributeError:
-            pass
-
-        for item in preference:
-            try:
-                label = getattr(data, item)
-                break
-            except AttributeError:
-                continue
+    for layer in layers:
+        
+        if attr == "time":
+            label = layer.data.to_datetime()
         else:
-            label = attr
-
-        try:
-            label = label.values
-        except AttributeError:
-            pass
-        else:
-            try:
-                if len(label) == 1:
-                    label = label.item()
-            except TypeError:
-                pass
-            label = Timestamp(label).to_pydatetime()
+            if not type(layer.data[0]).__name__ == "GribField":
+                label = xarray_metadata(layer.data, attr)
+            else:
+                candidates = [attr]
+                if attr in METADATA:
+                    candidates = METADATA[attr]["preference"] + candidates
+                
+                for item in candidates:
+                    label = layer.data.metadata(item)[0]
+                    if label is not None:
+                        break
+                else:
+                    label = f"<NO {attr.upper()}>"
 
         if isinstance(label, str) and attr == "units" and not NO_CFUNITS:
             label = f"${tex(label)}$"
 
         labels.append(label)
-
+    
     return labels
+
+
+def xarray_metadata(data, attr):
+    data = data[0].to_xarray()
+
+    preference = [attr]
+    if attr in METADATA:
+        preference = METADATA[attr]["preference"] + preference
+
+    for item in preference:
+        try:
+            label = getattr(data, item)
+            break
+        except AttributeError:
+            continue
+    else:
+        label = attr
+
+    try:
+        label = label.values
+    except AttributeError:
+        pass
+    else:
+        try:
+            if len(label) == 1:
+                label = label.item()
+        except TypeError:
+            pass
+        label = Timestamp(label).to_pydatetime()
+
+    return label
 
 
 def format_string(self, label):
@@ -141,8 +158,8 @@ def _default_title(self):
             f"{{variable_name!{i}}} at {{time!{i}:%H:%M}} on {{time!{i}:%Y-%m-%d}}"
             for i in range(len(self._layers))
         )
-    if self._domain is not None:
-        label += " over {domain}"
+    if self.bounds is not None:
+        label += f" over {self._domain.title}"
     return format_string(self, label)
 
 

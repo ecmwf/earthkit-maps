@@ -7,7 +7,7 @@ import cv2
 from cartopy.util import add_cyclic_point
 import cartopy.crs as ccrs
 
-from magpye.domains import projections, parse_crs, auto
+from magpye import domains
 from magpye.schema import schema
 
 X_RESOLUTION = 1000
@@ -59,11 +59,11 @@ def extract_xy(
     points = field.to_points(flatten=False)
     values = field.to_numpy(flatten=False)
     
-    if bounds is not None and crs.__class__.__name__ not in projections.FIXED_CRSS:
-        crs_bounds = auto.get_crs_extents(bounds, src_crs, crs)
+    if bounds is not None and crs.__class__.__name__ not in domains.projections.FIXED_CRSS:
+        crs_bounds = domains.bounds.from_bbox(bounds, src_crs, crs)
         
         roll_by = None
-        if src_crs.__class__.__name__ in auto.CYCLIC_SYSTEMS:
+        if src_crs.__class__.__name__ in domains.bounds.CYCLIC_SYSTEMS:
             if crs_bounds[0] < 0 and crs_bounds[1] > 0:
                 if crs_bounds[0] < points["x"].min():
                     roll_by = roll_from_0_360_to_minus_180_180(points["x"])
@@ -121,9 +121,10 @@ def _extract_axis(data, **kwargs):
 
 def extract(data_vars=None):
     def wrapper(method):
-        def sanitised_method(self, data, *args, x=None, y=None, **kwargs):
+        def sanitised_method(self, fields, *args, x=None, y=None, **kwargs):
             
-            fields = emohawk.from_source("file", data)
+            if not isinstance(fields, emohawk.sources.file.File):
+                fields = [fields]
             
             # TODO: iteration over fields
             for field in fields[:1]:
@@ -132,28 +133,20 @@ def extract(data_vars=None):
                     proj_string = field.to_proj()[0]
                 except AttributeError as err:
                     warnings.warn(f"{err}; assuming {schema.reference_crs} CRS")
-                    crs = parse_crs(schema.reference_crs)
+                    crs = domains.crs.parse(schema.reference_crs)
                 else:
                     if proj_string is None:
-                        crs = parse_crs(schema.reference_crs)
+                        crs = domains.crs.parse(schema.reference_crs)
                     else:
-                        crs = projections.proj_to_ccrs(proj_string)
+                        crs = domains.projections.proj_to_ccrs(proj_string)
 
-                if self._domain and not self._bounds:
-                    bounds = self.bounds
-                    chart_crs = self.crs
-                else:
-                    bounds = self._bounds
-                    chart_crs = self._crs
+                if self._domain is None:
+                    self._domain = domains.Domain(crs=crs)
 
                 values, x, y = extract_xy(
-                    field, x, y, crs, chart_crs, bounds, data_vars=data_vars
+                    field, x, y, crs, self.crs, self.bounds, data_vars=data_vars
                 )
 
-                if self._bounds is None and self._crs is None and self._domain is None:
-                    self._crs = crs
-
-                self._setup_domain()
                 kwargs["transform"] = kwargs.get("transform", crs)
 
                 return method(self, values, *args, x=x, y=y, **kwargs)

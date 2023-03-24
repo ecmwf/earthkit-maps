@@ -3,16 +3,15 @@ import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import numpy as np
 
-from magpye import inputs
-from magpye.domains import auto, projections, parse_crs
+from magpye import inputs, domains
 from magpye.schema import schema
 
-from . import _fonts, layers, styles, titles  # noqa: F401
+from . import _fonts, layers, styles, titles, markers  # noqa: F401
 
 
 def await_crs(method):
     def wrapper(self, *args, **kwargs):
-        if self._crs is None:
+        if self._domain is None:
             self._queue.append((method, args, kwargs))
         else:
             return method(self, *args, **kwargs)
@@ -50,13 +49,12 @@ class Chart:
         does not match the figsize.
     """
 
-    def __init__(self, domain=None, crs=None, domain_crs=None, figsize=(10, 10)):
-        self._domain = domain
-        self._crs = crs
-        if self._crs is not None:
-            self._crs = parse_crs(self._crs)
-        self._domain_crs = domain_crs
-        self._bounds = None
+    def __init__(self, domain=None, crs=None, figsize=(10, 10)):
+        self._domain = None
+        if isinstance(domain, str):
+            self._domain = domains.Domain.from_string(domain, crs)
+        elif domain is not None or crs is not None:
+            self._domain = domains.Domain(domain, crs)
         self._boundless = False
 
         self._queue = []
@@ -70,6 +68,8 @@ class Chart:
         self._cbar_locations = None
 
         self._layers = []
+        self._gridlines = None
+        self._suptitle = None
 
     @staticmethod
     def close_current_fig():
@@ -102,43 +102,23 @@ class Chart:
 
     @property
     def bounds(self):
-        if self._bounds is None and not self._boundless:
-            self._setup_domain()
-        return self._bounds
+        return self._domain.bounds
 
     @property
-    def lat_lon_bounds(self):
-        return auto.get_crs_extents(self.bounds, ccrs.PlateCarree(), self.crs)
+    def latlon_bounds(self):
+        return self._domain.latlon_bounds
 
     @property
     def crs(self):
-        if self._crs is None:
-            self._setup_domain()
-        return self._crs
+        return self._domain.crs
 
-    def _setup_domain(self):
-        if self._bounds is None:
-            if isinstance(self._domain, (list, tuple)):
-                assert len(self._domain) == 4, (
-                    f"domains must contain 4 elements ([min_x, max_x, min_y, "
-                    f"max_y]); got {len(self._domain)}"
-                )
-                if self._crs is None:
-                    self._crs = auto.get_optimal_crs(self._domain)
-                self._bounds = auto.get_crs_extents(
-                    self._domain, self._crs, self._domain_crs or schema.reference_crs
-                )
-            elif isinstance(self._domain, str):
-                self._bounds, self._crs = auto.get_bounds_and_crs(
-                    self._domain, self._crs
-                )
-            elif self._domain is None:
-                self._crs = self._crs or schema.reference_crs
-                self._boundless = True
-            else:
-                raise ValueError(
-                    f"'domain' must be str or list; got {type(self._domain)}"
-                )
+    def marker(self, *args, marker="o", transform=ccrs.Geodetic(), **kwargs):
+        kwargs["transform"] = transform
+        if isinstance(marker, markers.CustomMarker):
+            plot = marker.plot(self, *args, **kwargs)  
+        else:
+            plot = self.ax.plot(*args, marker=marker, **kwargs)
+        return plot
 
     @styles.dynamic(normalize=True)
     @layers.append
@@ -153,7 +133,7 @@ class Chart:
     def shaded_contour(
         self, data, *args, x=None, y=None, transform_first=True, **kwargs
     ):
-        if self.crs.__class__.__name__ in projections.FIXED_CRSS:
+        if self.crs.__class__.__name__ in domains.projections.FIXED_CRSS:
             transform_first = False
         return self.ax.contourf(
             x, y, data, *args, transform_first=transform_first, **kwargs
@@ -176,7 +156,7 @@ class Chart:
         transform_first=True,
         **kwargs,
     ):
-        if self.crs.__class__.__name__ in projections.FIXED_CRSS:
+        if self.crs.__class__.__name__ in domains.projections.FIXED_CRSS:
             transform_first = False
         if "cmap" in kwargs and "colors" in kwargs:
             kwargs.pop("colors")
@@ -198,8 +178,11 @@ class Chart:
 
     @schema.apply("font")
     @schema.legend.apply()
-    def legend(self, *args, **kwargs):
-        layer = self._layers[-1]
+    def legend(self, layer=None, *args, **kwargs):
+        if layer is None:
+            return [self.legend(layer, *args, **kwargs) for layer in self._layers]
+        elif isinstance(layer, int):
+            layer = self._layers[layer]
         if layer.legend is not False:
             return layer.legend(*args, chart=self, **kwargs)
 
@@ -207,6 +190,11 @@ class Chart:
         p = self.ax.get_position()
 
         offset = {"right": 0, "left": 0, "bottom": 0, "top": 0}
+        if self._gridlines is not None:
+            pad = {"right": 0.045, "left": 0.045, "bottom": 0.02, "top": 0.02}
+            for side in offset:
+                if getattr(self._gridlines, f"{side}_labels"):
+                    offset[side] += pad[side]
 
         for layer in self._layers:
             if layer._legend_location is None:
@@ -224,6 +212,23 @@ class Chart:
             }[layer._legend_location]
             offset[layer._legend_location] += 0.1
             layer._legend_ax.set_position(position)
+
+        if self._suptitle:
+            self._position_title()
+    
+    def _position_title(self):
+        if any(layer._legend_location == "top" for layer in self._layers):
+            y = max(
+                layer._legend_ax.get_position().ymax
+                for layer in self._layers
+            ) + 0.06
+        else:
+            y = self.ax.get_position().ymax + 0.025
+            if self._gridlines is not None:
+                if self._gridlines.top_labels:
+                    y += 0.025
+        x = self._suptitle.get_position()[0]
+        self._suptitle.set_position((x, y))
 
     @await_crs
     @schema.coastlines.apply()
@@ -249,7 +254,13 @@ class Chart:
     @schema.gridlines.apply()
     def gridlines(self, **kwargs):
         """Add latitude and longitude gridlines."""
-        return self.ax.gridlines(**kwargs)
+        self._gridlines = self.ax.gridlines(**kwargs)
+        
+        # If the gridlines have labels, we need to update the colorbars
+        if kwargs.get("draw_labels"):
+            self._resize_colorbars()
+            
+        return self._gridlines
 
     @await_crs
     def land(self, **kwargs):
@@ -267,7 +278,9 @@ class Chart:
         label = titles.format_string(self, label)
 
         plt.sca(self.ax)
-        plt.title(label, *args, **kwargs)
+        self._suptitle = plt.suptitle(label, *args, **kwargs)
+        self._position_title()
+        return self._suptitle
 
     def _release_queue(self):
         while len(self._queue):
