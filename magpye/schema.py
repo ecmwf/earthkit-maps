@@ -3,7 +3,7 @@ import os
 import yaml
 
 from magpye import _definitions
-from magpye.domains import parse_crs
+from magpye.domains import crs
 from magpye.utils import recursive_dict_update
 
 _DEFAULT_SCHEMA = "default"
@@ -45,7 +45,7 @@ class Schema(dict):
     """Class for containing and maintaining global style settings."""
 
     parsers = {
-        "reference_crs": parse_crs,
+        "reference_crs": crs.parse,
     }
 
     def __init__(self, **kwargs):
@@ -73,17 +73,20 @@ class Schema(dict):
                 value = self.parsers[key](value)
             setattr(self, key, value)
 
-    def apply(self):
+    def apply(self, *keys):
         def decorator(function):
             def wrapper(*args, **kwargs):
-                return function(*args, **self._update_kwargs(kwargs))
+                return function(*args, **self._update_kwargs(kwargs, keys))
 
             return wrapper
 
         return decorator
 
-    def _update_kwargs(self, kwargs):
-        return recursive_dict_update(self._to_dict(), kwargs)
+    def _update_kwargs(self, kwargs, keys):
+        schema_kwargs = self._to_dict()
+        if keys:
+            schema_kwargs = {key: schema_kwargs[key] for key in keys}
+        return recursive_dict_update(schema_kwargs, kwargs)
 
     def _to_dict(self):
         d = dict()

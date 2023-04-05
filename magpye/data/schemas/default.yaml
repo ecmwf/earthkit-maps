@@ -1,6 +1,6 @@
 # Style
 font: Open Sans
-colormap: turbo
+default_style: magma
 
 # Projections and interpolation
 reference_crs: PlateCarree
@@ -18,8 +18,17 @@ contour:
   linewidths: [1, 0.75, 0.75, 0.75]
 point:
   marker: o
-colorbar:
+legend:
   location: right
+  format: "%.4g"
+title: {}
+  # fontsize: 14
+barbs:
+  length: 5
+  linewidth: 1
+  sizes:
+    spacing: 0.25
+  regrid_shape: 30
 
 # Auxilliary layers defaults
 coastlines:
@@ -27,6 +36,14 @@ coastlines:
 borders:
   linestyle: "--"
   linewidth: 0.75
+roads:
+  linestyle: "-"
+  linewidth: 0.75
+  edgecolor: "#ffcc00"
+  alpha: 0.5
+  facecolor: "none"
+land:
+  facecolor: "#e6e6e6"
 states_provinces:
   linestyle: ":"
   linewidth: 0.75

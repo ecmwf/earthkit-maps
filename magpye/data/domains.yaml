@@ -4,7 +4,7 @@
 # delimitation of its frontiers or boundaries.
 domains:
   # Domain bounds given as East, West, North, South
-  europe:
+  Europe:
     bounds: [2502500, 7497500, 752500, 5497500]
     crs:
       name: LambertAzimuthalEqualArea
@@ -12,34 +12,45 @@ domains:
       central_longitude: 10
       false_easting: 4321000
       false_northing: 3210000
-  central europe: [2, 24, 45, 55]
-  northeast europe: [15, 40, 45, 72]
-  northwest europe: [-25, 15, 45, 72]
-  southeast europe: [15, 40, 34, 45]
-  southwest europe: [-25, 15, 34, 45]
-  mediterranean: [-8, 36, 28, 44]
 
-  africa: [-22, 54, -37, 40]
+  Central Europe: [2, 24, 45, 55]
+  Northeast Europe: [15, 40, 45, 72]
+  Northwest Europe: [-25, 15, 45, 72]
+  southeast Europe: [15, 40, 34, 45]
+  Southwest Europe: [-25, 15, 34, 45]
+  Mediterranean: [-8, 36, 28, 44]
 
-  arctic: [-180, 180, 70, 90]
+  Africa: [-22, 54, -37, 40]
 
-  asia:
+  Arctic: 
+    bounds: [-4000000, 4000000, -4000000, 4000000]
+    crs:
+      name: NorthPolarStereo
+  Asia:
     bounds: [-6000000, 6000000, -7500000, 5000000]
     crs:
       name: TransverseMercator
       central_latitude: 52.5
       central_longitude: 85
 
-
-  north atlantic: [-50, 35, 32, 72]
-  north america: [-140, -60, 2, 85]
-  south america: [-87, -32, 17, -57]
-  continental united states: [-120, -72, 24, 48]
+  North Atlantic: [-50, 35, 32, 72]
+  North America: [-140, -60, 2, 85]
+  South America: [-87, -32, 17, -57]
+  Contiguous United States: [-120, -72, 24, 48]
 
 alternate_names:
-  continental united states: [CONUS]
-  united states: [USA, United States of America]
-  united kingdom: [UK, GB, Great Britain]
-  russian federation: [Russia]
-  republic of korea: [South Korea]
-  dem. rep. korea: [North Korea, DPRK]
+  Contiguous United States: [CONUS]
+  United States: [USA, United States of America]
+  United Kingdom: [UK, GB, Great Britain]
+  Russian Federation: [Russia]
+  Republic of Korea: [South Korea]
+  Dem. Rep. Korea: [North Korea, DPRK]
+
+the_countries:
+  - Bahamas
+  - Contiguous United States
+  - Democratic Republic of the Congo
+  - Netherlands
+  - Philippines
+  - United Kingdom
+  - United States
