@@ -9,17 +9,17 @@
 import os
 import sys
 
-import magpye
+import earthkit.maps
 
 sys.path.insert(0, os.path.abspath("../"))
 
 # -- Project information -----------------------------------------------------
 
-project = "magpye"
+project = "earthkit-maps"
 copyright = "2023, European Centre for Medium Range Weather Forecasts"
 author = "European Centre for Medium Range Weather Forecasts"
-version = magpye.__version__
-release = magpye.__version__
+version = earthkit.maps.__version__
+release = earthkit.maps.__version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -37,7 +37,7 @@ extensions = [
 autodoc_typehints = "none"
 
 # autoapi configuration
-autoapi_dirs = ["../magpye"]
+autoapi_dirs = ["../earthkit/maps"]
 autoapi_ignore = ["*/version.py"]
 autoapi_options = [
     "members",

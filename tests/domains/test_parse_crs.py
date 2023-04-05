@@ -1,7 +1,7 @@
 import cartopy.crs as ccrs
 import pytest
 
-from magpye import domains
+from earthkit.maps import domains
 
 
 def test_crs_from_string():

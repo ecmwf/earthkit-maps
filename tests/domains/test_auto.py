@@ -1,7 +1,7 @@
 import cartopy.crs as ccrs
 import pytest
 
-from magpye.domains import auto
+from earthkit.maps.domains import auto
 
 
 def test_preset():

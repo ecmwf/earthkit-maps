@@ -3,8 +3,8 @@ import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import numpy as np
 
-from magpye import inputs, domains
-from magpye.schema import schema
+from earthkit.maps import inputs, domains
+from earthkit.maps.schema import schema
 
 from . import _fonts, layers, styles, titles, markers  # noqa: F401
 

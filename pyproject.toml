@@ -12,7 +12,7 @@ convention = "numpy"
 add_ignore = "D1"
 
 [tool.setuptools_scm]
-write_to = "magpye/version.py"
+write_to = "earthkit/maps/version.py"
 write_to_template = '''
 # Do not change! Do not track in version control!
 __version__ = "{version}"

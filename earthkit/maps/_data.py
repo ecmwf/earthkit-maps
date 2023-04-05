@@ -2,7 +2,7 @@ from functools import partial
 
 import yaml
 
-from magpye import _definitions
+from earthkit.maps import _definitions
 
 READERS = {
     ".yaml": partial(yaml.load, Loader=yaml.SafeLoader),
@@ -19,7 +19,7 @@ class AmbiguousDataError(Exception):
 
 def load(source, data_type=None):
     """
-    Load a magpye auxilliary data file.
+    Load an earthkit.maps auxilliary data file.
 
     Parameters
     ----------

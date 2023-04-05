@@ -1,4 +1,4 @@
-from magpye import schema
+from earthkit.maps import schema
 
 
 def test_default_schema():

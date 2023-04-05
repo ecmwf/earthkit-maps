@@ -1,4 +1,4 @@
-from magpye import utils
+from earthkit.maps import utils
 
 
 def test_recursive_dict_update():

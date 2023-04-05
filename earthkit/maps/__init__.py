@@ -22,8 +22,8 @@ except ImportError:  # pragma: no cover
     # Local copy or not installed with setuptools
     __version__ = "999"
 
-from magpye import charts
-from magpye.schema import schema
+from earthkit.maps.charts import Chart as Map
+from earthkit.maps.schema import schema
 
 __all__ = [
     "__version__",

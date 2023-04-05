@@ -4,8 +4,8 @@
   "checkout": null,
   "context": {
     "cookiecutter": {
-      "project_name": "magpye",
-      "project_slug": "magpye",
+      "project_name": "earthkit-maps",
+      "project_slug": "earthkit-maps",
       "project_short_description": "Geospatial visualisation tools and templates",
       "copyright_holder": "European Centre for Medium Range Weather Forecasts",
       "copyright_year": "2023",

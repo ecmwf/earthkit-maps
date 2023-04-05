@@ -20,7 +20,7 @@ def parse(crs):
 
     Example
     -------
-    >>> magpye.domains.parse_crs("PlateCarree")
+    >>> earthkit.maps.domains.parse_crs("PlateCarree")
     <Derived Projected CRS: +proj=eqc +ellps=WGS84 +a=6378137.0 +lon_0=0.0 +to ...>
     Name: unknown
     Axis Info [cartesian]:
@@ -35,7 +35,7 @@ def parse(crs):
     Datum: unknown
     - Ellipsoid: WGS 84
     - Prime Meridian: Greenwich
-    >>> magpye.domains.parse_crs({"name": "PlateCarree", "central_longitude": 50})
+    >>> earthkit.maps.domains.parse_crs({"name": "PlateCarree", "central_longitude": 50})
     <Derived Projected CRS: +proj=eqc +ellps=WGS84 +a=6378137.0 +lon_0=50 +to_ ...>
     Name: unknown
     Axis Info [cartesian]:
@@ -80,7 +80,7 @@ def from_dict(kwargs):
 
     Example
     -------
-    >>> magpye.domains.parse_crs({"name": "PlateCarree", "central_longitude": 50})
+    >>> earthkit.maps.domains.parse_crs({"name": "PlateCarree", "central_longitude": 50})
     <Derived Projected CRS: +proj=eqc +ellps=WGS84 +a=6378137.0 +lon_0=50 +to_ ...>
     Name: unknown
     Axis Info [cartesian]:
@@ -115,7 +115,7 @@ def crs_from_string(string):
 
     Example
     -------
-    >>> magpye.domains.parse_crs("PlateCarree")
+    >>> earthkit.maps.domains.parse_crs("PlateCarree")
     <Derived Projected CRS: +proj=eqc +ellps=WGS84 +a=6378137.0 +lon_0=0.0 +to ...>
     Name: unknown
     Axis Info [cartesian]:

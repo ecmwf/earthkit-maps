@@ -6,7 +6,7 @@ import cartopy
 import matplotlib
 import pytest
 
-from magpye import charts, schema
+from earthkit.maps import charts, schema
 
 
 # TODO: There is a bug in matplotlib causing an incorrect DeprecationWarning

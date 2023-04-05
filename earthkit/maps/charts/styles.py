@@ -5,7 +5,7 @@ import matplotlib
 import numpy as np
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
 
-from magpye.schema import schema
+from earthkit.maps.schema import schema
 
 MAPPED_COLORS = {
     "mask": (0, 0, 0, 0),

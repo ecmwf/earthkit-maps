@@ -1,4 +1,4 @@
-from magpye import _data
+from earthkit.maps import _data
 
 
 def test_load():

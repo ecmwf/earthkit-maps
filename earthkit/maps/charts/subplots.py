@@ -1,5 +1,5 @@
 
-from magpye.charts import Chart
+from earthkit.maps.charts import Chart
 
 
 class Subplots(Chart):

@@ -1,1 +1,1 @@
-include magpye/data/*
+include earthkit/maps/data/*

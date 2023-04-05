@@ -7,8 +7,8 @@ import cv2
 from cartopy.util import add_cyclic_point
 import cartopy.crs as ccrs
 
-from magpye import domains
-from magpye.schema import schema
+from earthkit.maps import domains
+from earthkit.maps.schema import schema
 
 X_RESOLUTION = 1000
 Y_RESOLUTION = 1000

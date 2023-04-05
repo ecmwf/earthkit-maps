@@ -4,7 +4,7 @@ import emohawk
 from pandas import Timestamp
 
 
-from magpye import _data
+from earthkit.maps import _data
 
 
 NO_CFUNITS = False

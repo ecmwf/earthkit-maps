@@ -1,7 +1,7 @@
 
 import cartopy.io.shapereader as shpreader
 
-from magpye import domains
+from earthkit.maps import domains
 
 
 class NaturalEarthDomain:

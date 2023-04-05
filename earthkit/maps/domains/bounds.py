@@ -2,7 +2,7 @@
 import numpy as np
 import cartopy.crs as ccrs
 
-from magpye.schema import schema
+from earthkit.maps.schema import schema
 
 
 CYCLIC_SYSTEMS = ["PlateCarree", "Mercator"]

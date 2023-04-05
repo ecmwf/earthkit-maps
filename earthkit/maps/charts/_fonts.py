@@ -3,8 +3,8 @@ import os
 
 from matplotlib import font_manager, rcParams
 
-from magpye._definitions import FONTS_DIR
-from magpye.schema import schema
+from earthkit.maps._definitions import FONTS_DIR
+from earthkit.maps.schema import schema
 
 
 def register_fonts():

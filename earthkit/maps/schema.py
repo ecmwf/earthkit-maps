@@ -2,9 +2,9 @@ import os
 
 import yaml
 
-from magpye import _definitions
-from magpye.domains import crs
-from magpye.utils import recursive_dict_update
+from earthkit.maps import _definitions
+from earthkit.maps.domains import crs
+from earthkit.maps.utils import recursive_dict_update
 
 _DEFAULT_SCHEMA = "default"
 

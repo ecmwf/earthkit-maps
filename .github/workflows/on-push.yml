@@ -137,9 +137,9 @@ jobs:
   #   - name: Check wheels
   #     run: |
   #       cd dist || exit
-  #       $CONDA/bin/python -m pip install magpye*.whl || exit
+  #       $CONDA/bin/python -m pip install earthkit-maps*.whl || exit
   #       $CONDA/bin/python -m twine check * || exit
-  #       $CONDA/bin/python -c "import magpye"
+  #       $CONDA/bin/python -c "import earthkit-maps"
   #   - name: Publish a Python distribution to PyPI
   #     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
   #     uses: pypa/gh-action-pypi-publish@release/v1

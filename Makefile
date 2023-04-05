@@ -1,4 +1,4 @@
-PROJECT := magpye
+PROJECT := earthkit-maps
 CONDA := conda
 CONDAFLAGS :=
 COV_REPORT := html

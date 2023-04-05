@@ -1,11 +1,11 @@
-# magpye
+# earthkit.maps
 
 Geospatial visualisation tools and templates
 
 ## Quick Start
 
 ```python
->>> import magpye
+>>> import earthkit.maps
 
 ```
 

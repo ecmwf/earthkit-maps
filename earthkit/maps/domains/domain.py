@@ -3,8 +3,8 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.shapereader as shpreader
 
-from magpye import _data, domains
-from magpye.schema import schema
+from earthkit.maps import _data, domains
+from earthkit.maps.schema import schema
 
 
 DOMAIN_LOOKUP = _data.load("domains")
