@@ -23,11 +23,13 @@ except ImportError:  # pragma: no cover
     __version__ = "999"
 
 from earthkit.maps.charts import Chart as Map
+from earthkit.maps.charts import Tile
 from earthkit.maps.schema import schema
 
 __all__ = [
     "__version__",
     "schema",
     "Map",
+    "Tile",
     "charts",
 ]

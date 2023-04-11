@@ -15,6 +15,7 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec, SubplotSpec
 
 from earthkit.maps import domains, inputs
 from earthkit.maps.schema import schema
@@ -308,5 +309,31 @@ class Chart:
 
     def save(self, *args, **kwargs):
         """Save the chart."""
+        self._release_queue()
+        plt.savefig(*args, **kwargs)
+
+
+class Tile(Chart):
+    def __init__(self, *args, figsize=(512, 512), **kwargs):
+        px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
+        figsize = tuple([dim * px for dim in figsize])
+        super().__init__(*args, figsize=figsize, **kwargs)
+
+    @property
+    def ax(self):
+        if self._ax is None:
+            subplotspec = SubplotSpec(
+                GridSpec(1, 1, self.fig, left=0, right=1, bottom=0, top=1), 0
+            )
+            self._ax = self.fig.add_subplot(
+                subplotspec, frameon=False, projection=self.crs
+            )
+            if self.bounds is not None:
+                self._ax.set_extent(self.bounds, crs=self.crs)
+            self._ax.get_xaxis().set_visible(False)
+            self._ax.get_yaxis().set_visible(False)
+        return self._ax
+
+    def save(self, *args, **kwargs):
         self._release_queue()
         plt.savefig(*args, **kwargs)
