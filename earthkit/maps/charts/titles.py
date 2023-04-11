@@ -17,10 +17,6 @@ from string import Formatter
 import emohawk
 from pandas import Timestamp
 
-
-from earthkit.maps import _data
-
-
 NO_CFUNITS = False
 try:
     from cf_units.tex import tex
@@ -86,10 +82,10 @@ class TitleFormatter(Formatter):
 def get_metadata(layers, attr, layer=None):
     if layer is not None:
         layers = [layers[layer]]
-    
+
     labels = []
     for layer in layers:
-        
+
         if attr == "time":
             label = layer.data.to_datetime()
         else:
@@ -99,7 +95,7 @@ def get_metadata(layers, attr, layer=None):
                 candidates = [attr]
                 if attr in METADATA:
                     candidates = METADATA[attr]["preference"] + candidates
-                
+
                 for item in candidates:
                     label = layer.data.metadata(item)[0]
                     if label is not None:
@@ -111,7 +107,7 @@ def get_metadata(layers, attr, layer=None):
             label = f"${tex(label)}$"
 
         labels.append(label)
-    
+
     return labels
 
 
@@ -164,7 +160,9 @@ def title_string(string):
 
 
 def _default_title(self):
-    times = [emohawk.from_source("file", layer.data).to_datetime() for layer in self._layers]
+    times = [
+        emohawk.from_source("file", layer.data).to_datetime() for layer in self._layers
+    ]
     if len(set(times)) == 1:
         label = "{variable_name} at {time!0:%H:%M} on {time!0:%Y-%m-%d}"
     else:

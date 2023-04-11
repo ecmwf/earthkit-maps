@@ -22,7 +22,7 @@ domains:
 
   Africa: [-22, 54, -37, 40]
 
-  Arctic: 
+  Arctic:
     bounds: [-4000000, 4000000, -4000000, 4000000]
     crs:
       name: NorthPolarStereo
@@ -47,10 +47,10 @@ alternate_names:
   Dem. Rep. Korea: [North Korea, DPRK]
 
 the_countries:
-  - Bahamas
-  - Contiguous United States
-  - Democratic Republic of the Congo
-  - Netherlands
-  - Philippines
-  - United Kingdom
-  - United States
+- Bahamas
+- Contiguous United States
+- Democratic Republic of the Congo
+- Netherlands
+- Philippines
+- United Kingdom
+- United States

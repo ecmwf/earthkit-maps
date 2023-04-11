@@ -15,12 +15,11 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
-import numpy as np
 
-from earthkit.maps import inputs, domains
+from earthkit.maps import domains, inputs
 from earthkit.maps.schema import schema
 
-from . import _fonts, layers, styles, titles, markers  # noqa: F401
+from . import _fonts, layers, markers, styles, titles  # noqa: F401
 
 
 def await_crs(method):
@@ -129,7 +128,7 @@ class Chart:
     def marker(self, *args, marker="o", transform=ccrs.Geodetic(), **kwargs):
         kwargs["transform"] = transform
         if isinstance(marker, markers.CustomMarker):
-            plot = marker.plot(self, *args, **kwargs)  
+            plot = marker.plot(self, *args, **kwargs)
         else:
             plot = self.ax.plot(*args, marker=marker, **kwargs)
         return plot
@@ -175,7 +174,8 @@ class Chart:
         if "cmap" in kwargs and "colors" in kwargs:
             kwargs.pop("colors")
         contours = self.ax.contour(
-            x, y, data, *args, transform_first=transform_first, **kwargs)
+            x, y, data, *args, transform_first=transform_first, **kwargs
+        )
         if labels:
             clabels = self.ax.clabel(
                 contours,
@@ -229,13 +229,13 @@ class Chart:
 
         if self._suptitle:
             self._position_title()
-    
+
     def _position_title(self):
         if any(layer._legend_location == "top" for layer in self._layers):
-            y = max(
-                layer._legend_ax.get_position().ymax
-                for layer in self._layers
-            ) + 0.06
+            y = (
+                max(layer._legend_ax.get_position().ymax for layer in self._layers)
+                + 0.06
+            )
         else:
             y = self.ax.get_position().ymax + 0.025
             if self._gridlines is not None:
@@ -269,11 +269,11 @@ class Chart:
     def gridlines(self, **kwargs):
         """Add latitude and longitude gridlines."""
         self._gridlines = self.ax.gridlines(**kwargs)
-        
+
         # If the gridlines have labels, we need to update the colorbars
         if kwargs.get("draw_labels"):
             self._resize_colorbars()
-            
+
         return self._gridlines
 
     @await_crs

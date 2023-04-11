@@ -16,7 +16,6 @@ import inspect
 
 import cartopy.crs as ccrs
 
-
 GLOBE_AREA = 64800  # 360*180
 
 

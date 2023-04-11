@@ -66,7 +66,9 @@ def dynamic(normalize=False):
                     )
                 kwargs["cmap"] = kwargs.pop("colors")
             else:
-                kwargs["cmap"] = kwargs.pop("style", kwargs.pop("cmap", schema.default_style))
+                kwargs["cmap"] = kwargs.pop(
+                    "style", kwargs.pop("cmap", schema.default_style)
+                )
 
             if normalize and "levels" in kwargs:
                 cmap, norm = colormap(kwargs.pop("cmap"), kwargs["levels"])

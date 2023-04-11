@@ -14,15 +14,16 @@
 
 import warnings
 
+import cartopy.crs as ccrs
+import cv2
 import emohawk
 import numpy as np
-import cv2
-
-from cartopy.util import add_cyclic_point
-import cartopy.crs as ccrs
 
 from earthkit.maps import domains
 from earthkit.maps.schema import schema
+
+# from cartopy.util import add_cyclic_point
+
 
 X_RESOLUTION = 1000
 Y_RESOLUTION = 1000
@@ -56,11 +57,11 @@ def force_minus_180_to_180(x):
 
 
 def roll_from_0_360_to_minus_180_180(x):
-    return np.argwhere(x[0]>=180)[0][0]
+    return np.argwhere(x[0] >= 180)[0][0]
 
 
 def roll_from_minus_180_180_to_0_360(x):
-    return np.argwhere(x[0]>=0)[0][0]
+    return np.argwhere(x[0] >= 0)[0][0]
 
 
 def force_0_to_360(x):
@@ -72,10 +73,13 @@ def extract_xy(
 ):
     points = field.to_points(flatten=False)
     values = field.to_numpy(flatten=False)
-    
-    if bounds is not None and crs.__class__.__name__ not in domains.projections.FIXED_CRSS:
+
+    if (
+        bounds is not None
+        and crs.__class__.__name__ not in domains.projections.FIXED_CRSS
+    ):
         crs_bounds = domains.bounds.from_bbox(bounds, src_crs, crs)
-        
+
         roll_by = None
         if src_crs.__class__.__name__ in domains.bounds.CYCLIC_SYSTEMS:
             if crs_bounds[0] < 0 and crs_bounds[1] > 0:
@@ -94,20 +98,21 @@ def extract_xy(
             points["x"] = np.roll(points["x"], roll_by, axis=1)
             points["y"] = np.roll(points["y"], roll_by, axis=1)
             values = np.roll(values, roll_by, axis=1)
-        
+
         bbox = np.where(
-            (points["x"] >= crs_bounds[0]) &
-            (points["x"] <= crs_bounds[1]) &
-            (points["y"] >= crs_bounds[2]) &
-            (points["y"] <= crs_bounds[3]),
-            True, False
+            (points["x"] >= crs_bounds[0])
+            & (points["x"] <= crs_bounds[1])
+            & (points["y"] >= crs_bounds[2])
+            & (points["y"] <= crs_bounds[3]),
+            True,
+            False,
         )
-                        
-        kernel = np.ones((3, 3), dtype='uint8')
-        bbox = cv2.dilate(bbox.astype('uint8'), kernel).astype(bool)
-        
-        shape = bbox[np.ix_(np.any(bbox, axis=1),np.any(bbox, axis=0))].shape
-        
+
+        kernel = np.ones((3, 3), dtype="uint8")
+        bbox = cv2.dilate(bbox.astype("uint8"), kernel).astype(bool)
+
+        shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape
+
         points["x"] = points["x"][bbox].reshape(shape)
         points["y"] = points["y"][bbox].reshape(shape)
         values = values[bbox].reshape(shape)
@@ -136,13 +141,13 @@ def _extract_axis(data, **kwargs):
 def extract(data_vars=None):
     def wrapper(method):
         def sanitised_method(self, fields, *args, x=None, y=None, **kwargs):
-            
+
             if not isinstance(fields, emohawk.sources.file.File):
                 fields = [fields]
-            
+
             # TODO: iteration over fields
             for field in fields[:1]:
-            
+
                 try:
                     proj_string = field.to_proj()[0]
                 except AttributeError as err:

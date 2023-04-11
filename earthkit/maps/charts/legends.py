@@ -49,6 +49,7 @@ FALLBACK_LEGEND = continuous_colorbar
 
 def _default_legend(layer_type):
     from cartopy.mpl import contour, geocollection
+
     return {
         geocollection.GeoQuadMesh: continuous_colorbar,
         contour.GeoContourSet: continuous_colorbar,
@@ -97,7 +98,9 @@ def legend(
                 f"{','.join(list(LEGEND_MODES))}"
             )
 
-    data_layer._legend = draw_legend(data_layer, args, data_layer._legend_ax, orientation, kwargs)
+    data_layer._legend = draw_legend(
+        data_layer, args, data_layer._legend_ax, orientation, kwargs
+    )
     if location == "left":
         data_layer._legend_ax.yaxis.set_ticks_position("left")
 

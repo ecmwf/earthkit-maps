@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import bounds, crs, projections, optimal
-
+from . import bounds, crs, optimal, projections
 from .domain import Domain
+
+__all__ = [
+    "bounds",
+    "crs",
+    "optimal",
+    "projections",
+    "Domain",
+]

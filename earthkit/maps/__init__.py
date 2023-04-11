@@ -28,5 +28,6 @@ from earthkit.maps.schema import schema
 __all__ = [
     "__version__",
     "schema",
+    "Map",
     "charts",
 ]

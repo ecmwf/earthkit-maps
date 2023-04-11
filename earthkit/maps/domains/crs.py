@@ -48,7 +48,9 @@ def parse(crs):
     Datum: unknown
     - Ellipsoid: WGS 84
     - Prime Meridian: Greenwich
-    >>> earthkit.maps.domains.parse_crs({"name": "PlateCarree", "central_longitude": 50})
+    >>> earthkit.maps.domains.parse_crs(
+    ...     {"name": "PlateCarree", "central_longitude": 50}
+    ... )
     <Derived Projected CRS: +proj=eqc +ellps=WGS84 +a=6378137.0 +lon_0=50 +to_ ...>
     Name: unknown
     Axis Info [cartesian]:
@@ -93,7 +95,9 @@ def from_dict(kwargs):
 
     Example
     -------
-    >>> earthkit.maps.domains.parse_crs({"name": "PlateCarree", "central_longitude": 50})
+    >>> earthkit.maps.domains.parse_crs(
+    ...     {"name": "PlateCarree", "central_longitude": 50}
+    ... )
     <Derived Projected CRS: +proj=eqc +ellps=WGS84 +a=6378137.0 +lon_0=50 +to_ ...>
     Name: unknown
     Axis Info [cartesian]:

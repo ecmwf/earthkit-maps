@@ -17,8 +17,6 @@ import warnings
 import cartopy.crs as ccrs
 import pyproj
 
-
-
 FIXED_CRSS = ["NorthPolarStereo", "SouthPolarStereo"]
 
 
@@ -34,8 +32,9 @@ PROJ4_CRS = {
     }
 }
 
+
 def proj_to_ccrs(proj4_string):
-    
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         params = pyproj.CRS.from_proj4(proj4_string).to_dict()
