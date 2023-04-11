@@ -1,5 +1,3 @@
-"""Geospatial visualisation tools and templates."""
-
 # Copyright 2023, European Centre for Medium Range Weather Forecasts.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""Geospatial visualisation tools and templates."""
 
 try:
     # NOTE: the `version.py` file must not be present in the git repository
