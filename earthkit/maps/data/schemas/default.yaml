@@ -1,0 +1,60 @@
+# Style
+font: Open Sans
+cmap: magma
+
+# Projections and interpolation
+reference_crs: PlateCarree
+interpolation: None
+
+# Dates and times
+date_format: "%Y-%m-%d"
+time_format: "%H:%M"
+
+# Plotting defaults
+contour:
+  colors: black
+  labels: true
+  label_fontsize: 7
+  linewidths: [1, 0.75, 0.75, 0.75]
+point:
+  marker: o
+legend:
+  location: right
+  format: "%.4g"
+title:
+  horizontalalignment: left
+  x: 0.125
+  y: 0.85
+barbs:
+  length: 5
+  linewidth: 1
+  sizes:
+    spacing: 0.25
+  regrid_shape: 30
+
+# Auxilliary layers defaults
+coastlines:
+  linewidth: 0.75
+borders:
+  linestyle: "--"
+  linewidth: 0.75
+  edgecolor: [0.2, 0.2, 0.2]
+roads:
+  linestyle: "-"
+  linewidth: 0.75
+  edgecolor: "#ffcc00"
+  alpha: 0.5
+  facecolor: "none"
+land:
+  color: "#b3b3b3"
+states_provinces:
+  linestyle: ":"
+  linewidth: 0.75
+gridlines:
+  linestyle: "--"
+  edgecolor: grey
+  alpha: 0.8
+  x_inline: false
+  y_inline: false
+  draw_labels: ["bottom", "left"]
+  rotate_labels: false
