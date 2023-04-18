@@ -113,6 +113,8 @@ class Subplot:
             *args, colors=colors, transform_first=transform_first, **kwargs
         )
     
+    shaded_contour = contourf
+    
 
 class Subplots:
     
