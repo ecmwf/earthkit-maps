@@ -101,9 +101,14 @@ class Subplot:
             self.layers.append(DataLayer(data, layer, legend=legend))
         return wrapper
 
-    def contour(self, *args, **kwargs):
+    @styles.guess
+    def contour(self, *args, colors=None, **kwargs):
+        if colors is not None:
+            colors = styles.parse_colors(colors)
+            kwargs.pop("cmap", None)
         return self.add_layer(self.ax.contour)(*args, **kwargs)
 
+    @styles.guess
     @schema.apply("cmap")
     def contourf(self, *args, colors=None, transform_first=True, **kwargs):
         if colors is not None:
