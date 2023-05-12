@@ -64,6 +64,10 @@ class SubplotFormatter(Formatter):
     TOP_LEVEL_KEYS = {
         "domain": "domain",
     }
+    
+    LAYER_KEYS = [
+        "units"
+    ]
 
     def __init__(self, subplot):
         super().__init__()
@@ -91,6 +95,8 @@ class SubplotFormatter(Formatter):
         key = value
         if value in self.TOP_LEVEL_KEYS:
             value = getattr(self._subplot, self.TOP_LEVEL_KEYS[value])
+        elif value in self.LAYER_KEYS:
+            value = getattr(self.layers[0], value)
         else:
             value = get_metadata(self.layers, value, self._current_layer)
         if value == key:

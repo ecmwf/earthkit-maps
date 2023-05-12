@@ -153,9 +153,9 @@ class Chart:
         """Add latitude and longitude gridlines."""
         return self.subplots.gridlines(**kwargs)
 
-    @sources.data.matplotlibify
+    @expand_subplots
     def pcolormesh(self, data, *args, **kwargs):
-        pass
+        self.subplots.pcolormesh(data, *args, **kwargs)
     
     @expand_subplots
     def contourf(self, data, *args, **kwargs):

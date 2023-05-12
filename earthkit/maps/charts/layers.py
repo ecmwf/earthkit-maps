@@ -6,14 +6,39 @@ from earthkit.maps import domains, sources
 from earthkit.maps.schema import schema
 
 
+PRETTY_UNITS = {
+    "celsius": "°C",
+    "fahrenheit": "°F",
+}
+
+
+def compare_units(unit_1, unit_2):
+    from cf_units import Unit
+    return Unit(unit_1) == Unit(unit_2)
+
+
 class DataLayer:
     
-    def __init__(self, data, layer, legend=None):
+    def __init__(self, data, layer, legend=None, units=None):
         self.data = data
         self.layer = layer
         self._legend = legend
         self._legend_location = None
         self._legend_ax = None
+        self._units = units
+    
+    @property
+    def units(self):
+        from cf_units import Unit
+        from cf_units.tex import tex
+        if self._units is None:
+            self._units = self.data.metadata("units")
+        for name, unit in PRETTY_UNITS.items():
+            if compare_units(self._units, name):
+                break
+        else:
+            unit = Unit(self._units).symbol
+        return  f"${tex(unit)}$"
 
 
 class Subplot:
@@ -84,21 +109,35 @@ class Subplot:
         plt.sca(self.ax)
         return plt.title(label, *args, **kwargs)
     
-    def legend(self, **kwargs):
+    def legend(self, title="{variable_name} ({units})", **kwargs):
         exclusive_layers = []
         for layer in self.layers:
             if layer._legend and layer.layer.cmap not in [l.cmap for l in exclusive_layers]:
                 exclusive_layers.append(layer.layer)
-        return [plt.colorbar(layer, **kwargs) for layer in exclusive_layers]
+        cbars = [plt.colorbar(layer, **kwargs) for layer in exclusive_layers]
+        if title:
+            for cbar in cbars:
+                cbar.set_label(titles.format(self, title))
+        return cbars
     
     def add_layer(self, method):
-        def wrapper(data, *args, legend=True, **kwargs):
+        def wrapper(data, *args, units=None, legend=True, **kwargs):
             values, points = self.domain.bbox(data)
+            
+            if units is not None:
+                try:
+                    import cf_units
+                except ImportError:
+                    raise ImportError("cf_units is required for unit conversion")
+                values = cf_units.Unit(data.metadata("units")).convert(
+                    values, units
+                )
+            
             x = points["lon"]
             y = points["lat"]
             kwargs["transform"] = kwargs.pop("transform", data.crs())
             layer = method(x, y, values, *args, **kwargs)
-            self.layers.append(DataLayer(data, layer, legend=legend))
+            self.layers.append(DataLayer(data, layer, units=units, legend=legend))
         return wrapper
 
     @styles.guess
@@ -107,6 +146,13 @@ class Subplot:
             colors = styles.parse_colors(colors)
             kwargs.pop("cmap", None)
         return self.add_layer(self.ax.contour)(*args, **kwargs)
+
+    @styles.guess
+    def pcolormesh(self, *args, colors=None, **kwargs):
+        if colors is not None:
+            colors = styles.parse_colors(colors)
+            kwargs.pop("cmap", None)
+        return self.add_layer(self.ax.pcolormesh)(*args, **kwargs)
 
     @styles.guess
     @schema.apply("cmap")
