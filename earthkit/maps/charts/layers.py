@@ -25,6 +25,7 @@ class DataLayer:
         self._legend = legend
         self._legend_location = None
         self._legend_ax = None
+        self._legend_position_default = False
         self._units = units
     
     @property
@@ -109,15 +110,37 @@ class Subplot:
         plt.sca(self.ax)
         return plt.title(label, *args, **kwargs)
     
-    def legend(self, title="{variable_name} ({units})", **kwargs):
+    def legend(self, title="{variable_name} ({units})", orientation=None, location=None, **kwargs):
+        if orientation and location:
+            raise ValueError(
+                "'orientation' and 'location' are mutually exclusive arguments"
+            )
+        elif orientation is not None:
+            location = "right" if orientation == "vertical" else "bottom"
+        elif location is None:
+            # Default to a colorbar on the right
+            location = "right"
+        orientation = "vertical" if location in ("left", "right") else "horizontal"
+        
         exclusive_layers = []
         for layer in self.layers:
             if layer._legend and layer.layer.cmap not in [l.cmap for l in exclusive_layers]:
                 exclusive_layers.append(layer.layer)
-        cbars = [plt.colorbar(layer, **kwargs) for layer in exclusive_layers]
-        if title:
+        cbars = [plt.colorbar(layer, orientation=orientation, **kwargs) for layer in exclusive_layers]
+        
+        rotation = {"right": 270, "left": 90, "top": 0, "bottom": 0}[location]
+        labelpad = {"right": 20, "left": -60, "top": -60, "bottom": 0}[location]
+        for cbar in cbars:
+            if title:
+                cbar.set_label(
+                    titles.format(self, title), rotation=rotation, labelpad=labelpad)        
+
+        if not any(key in kwargs for key in ("cax", "x", "y")):
             for cbar in cbars:
-                cbar.set_label(titles.format(self, title))
+                cbar.auto = True
+        for cbar in cbars:
+            cbar.location = location
+        self._chart._cbars = cbars
         return cbars
     
     def add_layer(self, method):
@@ -213,6 +236,10 @@ class Subplots:
         else:
             label = kwargs.pop("label", None)
         label = titles.format(self, label)
+        
+        if "y" not in kwargs:
+            y1 = min(subplot.ax.get_position().y1 for subplot in self)
+            kwargs["y"] = y1
 
         return self._chart.fig.suptitle(label, *args, **kwargs)
     

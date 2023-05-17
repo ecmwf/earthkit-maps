@@ -24,7 +24,6 @@ legend:
 title:
   horizontalalignment: left
   x: 0.125
-  y: 0.85
 barbs:
   length: 5
   linewidth: 1

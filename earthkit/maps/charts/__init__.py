@@ -62,6 +62,9 @@ class Chart:
         self._ax_idx = 0
 
         self._queue = []
+        self._cbars = []
+        
+        self._gridlines = None
     
     @property
     def iter_subplots(self):
@@ -151,7 +154,8 @@ class Chart:
     @schema.gridlines.apply()
     def gridlines(self, **kwargs):
         """Add latitude and longitude gridlines."""
-        return self.subplots.gridlines(**kwargs)
+        self._gridlines = self.subplots.gridlines(**kwargs)
+        return self._gridlines
 
     @expand_subplots
     def pcolormesh(self, data, *args, **kwargs):
@@ -185,12 +189,49 @@ class Chart:
     def show(self, *args, **kwargs):
         """Display the chart."""
         self._release_queue()
+        self._resize_colorbars()
         plt.show(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         """Save the chart."""
         self._release_queue()
+        self._resize_colorbars()
         plt.savefig(*args, **kwargs)
+
+
+    def _resize_colorbars(self):
+        positions = [subplot.ax.get_position() for subplot in self.subplots]
+        x0 = min(pos.x0 for pos in positions)
+        x1 = min(pos.x1 for pos in positions)
+        y0 = min(pos.y0 for pos in positions)
+        y1 = min(pos.y1 for pos in positions)
+        width = x1 - x0
+        height = y1 - y0
+        
+        offset = {"right": 0, "left": 0, "bottom": 0, "top": 0}
+
+        if self._gridlines is not None:
+            pad = {"right": 0.045, "left": 0.045, "bottom": 0.02, "top": 0.02}
+            for side in offset:
+                if getattr(self._gridlines[0], f"{side}_labels"):
+                    offset[side] += pad[side]
+
+        for cbar in self._cbars:
+            if not getattr(cbar, "auto", False):
+                continue
+            position = {
+                "right": [
+                    x0 + width + 0.01 + offset["right"],
+                    y0,
+                    0.03,
+                    height,
+                ],
+                "left": [x0 - 0.06 - offset["left"], y0, 0.03, height],
+                "bottom": [x0, y0 - 0.04 - offset["bottom"], width, 0.03],
+                "top": [x0, y0 + height + 0.04 + offset["top"], width, 0.03],
+            }[cbar.location]
+            offset[cbar.location] += 0.1
+            cbar.ax.set_position(position)
 
 
 def auto_rows_cols(num_subplots, max_cols=8):

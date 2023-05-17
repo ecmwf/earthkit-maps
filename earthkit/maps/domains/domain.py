@@ -43,7 +43,10 @@ class Domain:
         from . import natural_earth
 
         domain_name = lookup_name(string)
-
+        
+        if crs is not None:
+            crs = domains.crs.parse(crs)
+        
         if domain_name is not None and domain_name in DOMAIN_LOOKUP["domains"]:
             domain_config = DOMAIN_LOOKUP["domains"][domain_name]
             if isinstance(domain_config, list):

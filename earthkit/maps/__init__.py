@@ -23,3 +23,4 @@ except ImportError:  # pragma: no cover
     __version__ = "999"
 
 from .charts import Chart
+from .schema import schema

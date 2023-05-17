@@ -17,6 +17,12 @@ import cartopy.crs as ccrs
 DEFAULT_CRS = ccrs.PlateCarree()
 
 
+CRS_MAPPING = {
+    "EPSG:4326": ccrs.PlateCarree,
+    "cylindrical": ccrs.PlateCarree,
+}
+
+
 def parse(crs):
     """
     Convert a string or dictionary representation of a CRS into a cartopy CRS.
@@ -77,7 +83,13 @@ def parse(crs):
         if isinstance(crs, dict):
             crs = from_dict(crs)
         else:
-            crs = crs_from_string(crs)
+            if crs in CRS_MAPPING:
+                crs = CRS_MAPPING[crs]()
+            elif crs.upper().startswith("EPSG"):
+                crs = crs.upper().lstrip("EPSG:")
+                crs = ccrs.epsg(crs)
+            else:
+                crs = crs_from_string(crs)
 
     return crs
 
