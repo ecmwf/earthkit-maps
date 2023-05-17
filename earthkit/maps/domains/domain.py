@@ -13,10 +13,28 @@
 # limitations under the License.
 
 import cartopy.crs as ccrs
+import cv2
+import numpy as np
 
 from earthkit.maps import _data, domains
 
 DOMAIN_LOOKUP = _data.load("domains")
+
+
+def force_minus_180_to_180(x):
+    return (x + 180) % 360 - 180
+
+
+def roll_from_0_360_to_minus_180_180(x):
+    return np.argwhere(x[0] >= 180)[0][0]
+
+
+def roll_from_minus_180_180_to_0_360(x):
+    return np.argwhere(x[0] >= 0)[0][0]
+
+
+def force_0_to_360(x):
+    return x % 360
 
 
 class Domain:
@@ -25,6 +43,9 @@ class Domain:
         from . import natural_earth
 
         domain_name = lookup_name(string)
+
+        if crs is not None:
+            crs = domains.crs.parse(crs)
 
         if domain_name is not None and domain_name in DOMAIN_LOOKUP["domains"]:
             domain_config = DOMAIN_LOOKUP["domains"][domain_name]
@@ -52,33 +73,98 @@ class Domain:
             domain_name = source.domain_name
             bounds = source.bounds
             crs = source.crs
-
         return cls(bounds, crs, domain_name)
 
     def __init__(self, bounds=None, crs=None, domain_name=None):
         if crs is None:
-            self.crs = domains.optimal.crs_from_bounds(bounds)
-            self.bounds = domains.bounds.from_bbox(bounds, self.crs)
+            if bounds is None:
+                self.crs = crs
+                self.bounds = bounds
+            else:
+                self.crs = domains.optimal.crs_from_bounds(bounds)
+                self.bounds = domains.bounds.from_bbox(bounds, self.crs)
         else:
             self.crs = domains.crs.parse(crs)
             self.bounds = bounds
 
         self.domain_name = domain_name
 
+    def __repr__(self):
+        return self.title
+
     @property
     def title(self):
         if self.domain_name in DOMAIN_LOOKUP["the_countries"]:
             return f"the {self.domain_name}"
         elif self.domain_name is None:
-            string = "a custom domain"
-            if self.bounds is not None:
-                string += f" ({[round(i, 2) for i in self.latlon_bounds]})"
+            if self.bounds is None:
+                string = "custom domain"
+            else:
+                ordinal_values = []
+                for lon in self.latlon_bounds[:2]:
+                    direction = ""
+                    if lon != 0:
+                        direction = "°W" if lon > 0 else "°E"
+                    ordinal_values.append(f"{round(abs(lon), 2)}{direction}")
+                for lat in self.latlon_bounds[2:]:
+                    direction = ""
+                    if lat != 0:
+                        direction = "°N" if lat > 0 else "°S"
+                    ordinal_values.append(f"{round(abs(lat), 2)}{direction}")
+                string = ", ".join(ordinal_values)
             return string
         return self.domain_name
 
     @property
     def latlon_bounds(self):
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
+
+    def bbox(self, field):
+        source_crs = field.crs()
+
+        points = field.to_points(flatten=False)
+        values = field.to_numpy(flatten=False)
+
+        if self.bounds:
+            crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
+
+            roll_by = None
+            if crs_bounds[0] < 0 and crs_bounds[1] > 0:
+                if crs_bounds[0] < points["lon"].min():
+                    roll_by = roll_from_0_360_to_minus_180_180(points["lon"])
+                    points["lon"] = force_minus_180_to_180(points["lon"])
+                    for i in range(2):
+                        crs_bounds[i] = force_minus_180_to_180(crs_bounds[i])
+            elif crs_bounds[0] < 180 and crs_bounds[1] > 180:
+                if crs_bounds[1] > points["lon"].max():
+                    roll_by = roll_from_minus_180_180_to_0_360(points["lon"])
+                    points["lon"] = force_0_to_360(points["lon"])
+                    for i in range(2):
+                        crs_bounds[i] = force_0_to_360(crs_bounds[i])
+            if roll_by is not None:
+                points["lon"] = np.roll(points["lon"], roll_by, axis=1)
+                points["lat"] = np.roll(points["lat"], roll_by, axis=1)
+                values = np.roll(values, roll_by, axis=1)
+
+            bbox = np.where(
+                (points["lon"] >= crs_bounds[0])
+                & (points["lon"] <= crs_bounds[1])
+                & (points["lat"] >= crs_bounds[2])
+                & (points["lat"] <= crs_bounds[3]),
+                True,
+                False,
+            )
+
+            kernel = np.ones((3, 3), dtype="uint8")
+            bbox = cv2.dilate(bbox.astype("uint8"), kernel).astype(bool)
+
+            shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape
+
+            points["lon"] = points["lon"][bbox].reshape(shape)
+            points["lat"] = points["lat"][bbox].reshape(shape)
+            values = values[bbox].reshape(shape)
+
+        return values, points
 
 
 def lookup_name(domain_name):

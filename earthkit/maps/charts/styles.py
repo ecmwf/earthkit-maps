@@ -1,101 +1,55 @@
-# Copyright 2023, European Centre for Medium Range Weather Forecasts.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+from cf_units import Unit
 
-import re
-import warnings
+from earthkit.maps import _data
 
-import matplotlib
-import numpy as np
-from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
+EARTHKIT_COLORS = _data.load("colors/earthkit.yaml")
 
-from earthkit.maps.schema import schema
-
-MAPPED_COLORS = {
-    "mask": (0, 0, 0, 0),
-}
+AUTOMATIC_STYLES = _data.load("styles/wind.yaml")
 
 
-def colormap(cmap, levels):
-    n_colors = len(levels) - 1
-
-    if not isinstance(cmap, (list, tuple)):
-        colors = [matplotlib.cm.get_cmap(cmap)(i) for i in np.linspace(0, 1, n_colors)]
-    else:
-        colors = [read_color(color) for color in cmap]
-    colormap = LinearSegmentedColormap.from_list(name="", colors=colors, N=n_colors)
-    colormap.set_under((0, 0, 0, 0))
-
-    norm = BoundaryNorm(levels, colormap.N)
-
-    return colormap, norm
+def parse_colors(colors):
+    parsed_colors = []
+    for color in colors:
+        parsed_colors.append(EARTHKIT_COLORS.get(color, color))
+    return parsed_colors
 
 
-def read_color(color):
-    if isinstance(color, str):
-        if color.lower() == "none":
-            color = "#ffffff"
-        elif color.lower().startswith("rgb"):
-            result = re.search("\(([^)]+)", color)  # noqa: W605
-            if result is None:
-                raise ValueError(f"unrecognised color {color}")
+def guess(method):
+    def wrapper(self, data, *args, **kwargs):
+        if not all(kwarg in kwargs for kwarg in ("colors", "levels")):
+            kwargs = {**_guess_style(data), **kwargs}
+            if "cmap" in kwargs:
+                kwargs.pop("colors", None)
+        return method(self, data, *args, **kwargs)
+
+    return wrapper
+
+
+def _guess_style(data, styles=AUTOMATIC_STYLES["styles"]):
+    data_units = Unit(_unique_metadata(data, "units"))
+
+    style = dict()
+    for style_name, recipe in styles.items():
+        if "units" in recipe and Unit(recipe["units"]) != data_units:
+            continue
+        for match in recipe["metadata-match"]:
+            for key in match:
+                value = _unique_metadata(data, key)
+                if match[key] == value:
+                    break
             else:
-                color = tuple(float(x) for x in result.group(1).split(","))
-    return color
+                break
+        else:
+            style = recipe["style"]
+            break
+    return style
 
 
-def dynamic(normalize=False):
-    def decorator(method):
-        def wrapper(self, *args, **kwargs):
-            if "colors" in kwargs:
-                style = kwargs.pop("style", None)
-                if style is not None:
-                    warnings.warn(
-                        f"Both 'colors' and 'style' passed to {method.__name__}; "
-                        f"using 'colors' instead of 'style'"
-                    )
-                kwargs["cmap"] = kwargs.pop("colors")
-            else:
-                kwargs["cmap"] = kwargs.pop(
-                    "style", kwargs.pop("cmap", schema.default_style)
-                )
-
-            if normalize and "levels" in kwargs:
-                cmap, norm = colormap(kwargs.pop("cmap"), kwargs["levels"])
-                kwargs.update({"cmap": cmap, "norm": norm})
-
-            color_bounds = []
-            for kwarg in ("under_vmin", "over_vmax"):
-                breach_color = kwargs.pop(kwarg, None)
-                if breach_color is not None:
-                    direction, threshold_key = kwarg.split("_")
-                    threshold_value = kwargs.get(threshold_key)
-                    if threshold_value is None:
-                        raise ValueError(
-                            f"'{kwarg}' can only be passed if '{threshold_key}' "
-                            f"is also passed"
-                        )
-                    breach_color = MAPPED_COLORS.get(breach_color, breach_color)
-                    color_bounds.append((f"set_{direction}", breach_color))
-
-            result = method(self, *args, **kwargs)
-            layer = self._layers[-1].layer
-
-            for function, arg in color_bounds:
-                getattr(layer.cmap, function)(arg)
-
-            return result
-
-        return wrapper
-
-    return decorator
+def _unique_metadata(data, key):
+    value = data.metadata(key)
+    if isinstance(value, (list, tuple)):
+        value = list(set(value))
+        if len(value) != 1:
+            raise ValueError(f"data contains multiple {key} values")
+        value = value[0]
+    return value

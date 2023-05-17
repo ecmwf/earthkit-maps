@@ -16,3 +16,4 @@ dependencies:
 - pyyaml
 - numpy
 - xarray
+- opencv-python

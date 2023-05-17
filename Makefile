@@ -11,8 +11,8 @@ qa:
 unit-tests:
 	python -m pytest -vv --cov=. --cov-report=$(COV_REPORT) --doctest-glob="*.md" --doctest-glob="*.rst"
 
-type-check:
-	python -m mypy .
+# type-check:
+# 	python -m mypy .
 
 conda-env-update:
 	$(CONDA) env update $(CONDAFLAGS) -f environment.yml

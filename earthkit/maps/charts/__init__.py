@@ -1,31 +1,32 @@
-# Copyright 2023, European Centre for Medium Range Weather Forecasts.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+import glob
+import itertools
+import os
 
-import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec, SubplotSpec
+from matplotlib import font_manager, rcParams
 
-from earthkit.maps import domains, inputs
+from earthkit.maps import domains
+from earthkit.maps._definitions import FONTS_DIR
+from earthkit.maps.charts import layers
 from earthkit.maps.schema import schema
 
-from . import _fonts, layers, markers, styles, titles  # noqa: F401
+
+def register_fonts():
+    fontpaths = glob.glob(os.path.join(FONTS_DIR, "*"))
+    for fontpath in fontpaths:
+        font_files = glob.glob(os.path.join(fontpath, "*.ttf"))
+        for font_file in font_files:
+            font_manager.fontManager.addfont(font_file)
+
+
+register_fonts()
+rcParams["font.family"] = schema.font
 
 
 def await_crs(method):
     def wrapper(self, *args, **kwargs):
-        if self._domain is None:
+        if self.domain is None:
             self._queue.append((method, args, kwargs))
         else:
             return method(self, *args, **kwargs)
@@ -34,268 +35,156 @@ def await_crs(method):
 
 
 class Chart:
-    """
-    A geospatial chart containing a single axis.
+    def __init__(
+        self,
+        figure=None,
+        domain=None,
+        crs=None,
+        figsize=(10, 7.5),
+        **kwargs,
+    ):
+        self.domain = domains.parse_domain(domain, crs)
 
-    Parameters
-    ----------
-    domain : str or list (optional)
-        Must be either:
-            - A string naming the domain to use for the chart (e.g. a country,
-              continent or state/province).
-            - A list containing the bounding box of the domain, in the order
-              `[min_x, max_x, min_y, max_y]`. The bounding box is assumed to be
-              defined in terms of latitude and longitude values, unless the
-              `domain_crs` argument is also passed, in which case the bounding
-              box must be defined using `domain_crs` coordinates.
-        If no domain is passed, the chart will attempt to use the best domain
-        to fit the first field of data plotted on the chart.
-    crs : cartopy.crs.CRS (optional)
-        The coordinate reference system to use for this chart. If `None`
-        (default), will attempt to find the best CRS to suit the bounding box
-        of the chart.
-    domain_crs : cartopy.crs.CRS (optional)
-        Use with `domain` to specify the coordinate system on which the domain
-        bounding box is defined.
-    figsize : list (optional)
-        The width and height (in inches) of the chart. Note that the width of
-        the chart may be adjusted slightly if the aspect ratio of your chart
-        does not match the figsize.
-    """
+        if figure is None:
+            self.fig = plt.figure(figsize=figsize)
+        else:
+            self.fig = figure
 
-    def __init__(self, domain=None, crs=None, figsize=(10, 10)):
-        self._domain = None
-        if isinstance(domain, str):
-            self._domain = domains.Domain.from_string(domain, crs)
-        elif domain is not None or crs is not None:
-            self._domain = domains.Domain(domain, crs)
-        self._boundless = False
+        if kwargs:
+            self._gridspec = self.fig.add_gridspec(**kwargs)
+            self._rows = self._gridspec.nrows
+            self._cols = self._gridspec.ncols
+        else:
+            self._gridspec = None
+            self._rows = None
+            self._cols = None
+        self._iter_subplots = None
+
+        self.subplots = layers.Subplots(self)
+        self._ax_idx = 0
 
         self._queue = []
+        self._cbars = []
 
-        self._fig = None
-        self._figsize = figsize
-
-        self._ax = None
-
-        self._cbar_axes = None
-        self._cbar_locations = None
-
-        self._layers = []
         self._gridlines = None
-        self._suptitle = None
-
-    @staticmethod
-    def close_current_fig():
-        plt.clf()
-        plt.close()
 
     @property
-    def fig(self):
-        if self._fig is None:
-            self.close_current_fig()
-            self._fig = plt.figure(figsize=self._figsize)
-        return self._fig
+    def iter_subplots(self):
+        if self._iter_subplots is None:
+            self._iter_subplots = (
+                (i, j)
+                for i, j in itertools.product(
+                    range(self.gridspec.nrows),
+                    range(self.gridspec.ncols),
+                )
+            )
+        return self._iter_subplots
+
+    @property
+    def rows(self):
+        if self._rows is None:
+            self._rows = 1
+        return self._rows
+
+    @property
+    def cols(self):
+        if self._cols is None:
+            self._cols = 1
+        return self._cols
+
+    @property
+    def gridspec(self):
+        if self._gridspec is None:
+            self._gridspec = self.fig.add_gridspec(
+                nrows=self.rows,
+                ncols=self.cols,
+            )
+        return self._gridspec
+
+    def add_subplot(self, *args, data=None, domain=None, crs=None, **kwargs):
+        # Always increment the unplotted subplots
+        i, j = next(self.iter_subplots)
+
+        if not args:
+            args = (self.gridspec[i, j],)
+
+        if data is not None:
+            subplot = layers.Subplot.from_data(self, data, *args, **kwargs)
+        else:
+            subplot = layers.Subplot(self, *args, domain=domain, crs=crs, **kwargs)
+
+        self.subplots.add_subplot(subplot)
+        return subplot
+
+    def expand_subplots(method):
+        def wrapper(self, data, *args, **kwargs):
+            if self._rows is None:
+                if hasattr(data, "__len__"):
+                    self._rows, self._cols = auto_rows_cols(len(data))
+                else:
+                    self._rows, self._cols = 1, 1
+            return method(self, data, *args, **kwargs)
+
+        return wrapper
+
+    @property
+    def axes(self):
+        if not self._axes:
+            self.add_subplot()
+        return self._axes
 
     @property
     def ax(self):
-        if self._ax is None:
-            self._ax = self.fig.add_subplot(1, 1, 1, projection=self.crs)
-            if self.bounds is not None:
-                self._ax.set_extent(self.bounds, crs=self.crs)
-        return self._ax
-
-    @property
-    def size(self):
-        bbox = self.ax.get_position()
-        return bbox.width, bbox.height
-
-    def is_portrait(self):
-        value = self.size[0] < self.size[1]
-        return value
-
-    @property
-    def bounds(self):
-        return self._domain.bounds
-
-    @property
-    def latlon_bounds(self):
-        return self._domain.latlon_bounds
-
-    @property
-    def crs(self):
-        return self._domain.crs
-
-    def marker(self, *args, marker="o", transform=ccrs.Geodetic(), **kwargs):
-        kwargs["transform"] = transform
-        if isinstance(marker, markers.CustomMarker):
-            plot = marker.plot(self, *args, **kwargs)
-        else:
-            plot = self.ax.plot(*args, marker=marker, **kwargs)
-        return plot
-
-    @styles.dynamic(normalize=True)
-    @layers.append
-    @inputs.extract()
-    def mesh(self, data, *args, x=None, y=None, **kwargs):
-        kwargs.pop("levels", None)
-        return self.ax.pcolormesh(x, y, data, *args, **kwargs)
-
-    @styles.dynamic(normalize=True)
-    @layers.append
-    @inputs.extract()
-    def shaded_contour(
-        self, data, *args, x=None, y=None, transform_first=True, **kwargs
-    ):
-        if self.crs.__class__.__name__ in domains.projections.FIXED_CRSS:
-            transform_first = False
-        return self.ax.contourf(
-            x, y, data, *args, transform_first=transform_first, **kwargs
-        )
-
-    @layers.append
-    @inputs.extract()
-    @schema.contour.apply()
-    def contour(
-        self,
-        data,
-        *args,
-        x=None,
-        y=None,
-        labels=False,
-        label_fontsize=7,
-        label_colors=None,
-        label_frequency=1,
-        label_background=None,
-        transform_first=True,
-        **kwargs,
-    ):
-        if self.crs.__class__.__name__ in domains.projections.FIXED_CRSS:
-            transform_first = False
-        if "cmap" in kwargs and "colors" in kwargs:
-            kwargs.pop("colors")
-        contours = self.ax.contour(
-            x, y, data, *args, transform_first=transform_first, **kwargs
-        )
-        if labels:
-            clabels = self.ax.clabel(
-                contours,
-                contours.levels[0::label_frequency],
-                inline=True,
-                fontsize=label_fontsize,
-                colors=label_colors,
-                inline_spacing=2,
-            )
-            if label_background is not None:
-                for label in clabels:
-                    label.set_backgroundcolor(label_background)
-        return contours
-
-    @schema.apply("font")
-    @schema.legend.apply()
-    def legend(self, layer=None, *args, **kwargs):
-        if layer is None:
-            return [self.legend(layer, *args, **kwargs) for layer in self._layers]
-        elif isinstance(layer, int):
-            layer = self._layers[layer]
-        if layer.legend is not False:
-            return layer.legend(*args, chart=self, **kwargs)
-
-    def _resize_colorbars(self):
-        p = self.ax.get_position()
-
-        offset = {"right": 0, "left": 0, "bottom": 0, "top": 0}
-        if self._gridlines is not None:
-            pad = {"right": 0.045, "left": 0.045, "bottom": 0.02, "top": 0.02}
-            for side in offset:
-                if getattr(self._gridlines, f"{side}_labels"):
-                    offset[side] += pad[side]
-
-        for layer in self._layers:
-            if layer._legend_location is None:
-                continue
-            position = {
-                "right": [
-                    p.x0 + p.width + 0.01 + offset["right"],
-                    p.y0,
-                    0.03,
-                    p.height,
-                ],
-                "left": [p.x0 - 0.04 - offset["left"], p.y0, 0.03, p.height],
-                "bottom": [p.x0, p.y0 - 0.04 - offset["bottom"], p.width, 0.03],
-                "top": [p.x0, p.y0 + p.height + 0.04 + offset["top"], p.width, 0.03],
-            }[layer._legend_location]
-            offset[layer._legend_location] += 0.1
-            layer._legend_ax.set_position(position)
-
-        if self._suptitle:
-            self._position_title()
-
-    def _position_title(self):
-        if any(layer._legend_location == "top" for layer in self._layers):
-            y = (
-                max(layer._legend_ax.get_position().ymax for layer in self._layers)
-                + 0.06
-            )
-        else:
-            y = self.ax.get_position().ymax + 0.025
-            if self._gridlines is not None:
-                if self._gridlines.top_labels:
-                    y += 0.025
-        x = self._suptitle.get_position()[0]
-        self._suptitle.set_position((x, y))
+        return self._axes[self._ax_idx]
 
     @await_crs
     @schema.coastlines.apply()
     def coastlines(self, **kwargs):
         """Add coastal outlines from the Natural Earth “coastline” shapefile collection."""
-        return self.ax.coastlines(**kwargs)
+        return self.subplots.coastlines(**kwargs)
 
     @await_crs
     @schema.borders.apply()
     def borders(self, **kwargs):
         """Add political boundaries from the Natural Earth administrative shapefile collection."""
-        return self.ax.add_feature(cfeature.BORDERS, **kwargs)
+        return self.subplots.add_feature(cfeature.BORDERS, **kwargs)
 
     @await_crs
-    @schema.roads.apply()
-    def roads(self, resolution="50m", **kwargs):
-        """Add roads from the Natural Earth cultural shapefile collection."""
-        feature = cfeature.NaturalEarthFeature("cultural", "roads", "10m")
-
-        return self.ax.add_feature(feature, **kwargs)
+    @schema.land.apply()
+    def land(self, **kwargs):
+        """Add political boundaries from the Natural Earth administrative shapefile collection."""
+        return self.subplots.add_feature(cfeature.LAND, **kwargs)
 
     @await_crs
     @schema.gridlines.apply()
     def gridlines(self, **kwargs):
         """Add latitude and longitude gridlines."""
-        self._gridlines = self.ax.gridlines(**kwargs)
-
-        # If the gridlines have labels, we need to update the colorbars
-        if kwargs.get("draw_labels"):
-            self._resize_colorbars()
-
+        self._gridlines = self.subplots.gridlines(**kwargs)
         return self._gridlines
 
-    @await_crs
-    def land(self, **kwargs):
-        """Add land polygons from the Natural Earth "land" shapefile collection."""
-        return self.ax.add_feature(cfeature.LAND, **kwargs)
+    @expand_subplots
+    def pcolormesh(self, data, *args, **kwargs):
+        self.subplots.pcolormesh(data, *args, **kwargs)
 
-    @schema.apply("font")
+    @expand_subplots
+    def contourf(self, data, *args, **kwargs):
+        return self.subplots.contourf(data, *args, **kwargs)
+
+    shaded_contour = contourf
+
+    @expand_subplots
+    def contour(self, data, *args, **kwargs):
+        return self.subplots.contour(data, *args, **kwargs)
+
+    def subplot_titles(self, *args, **kwargs):
+        return self.subplots.titles(*args, **kwargs)
+
     @schema.title.apply()
     def title(self, *args, **kwargs):
-        if args:
-            label = args[0]
-            args = args[1:]
-        else:
-            label = kwargs.pop("labels", None)
-        label = titles.format_string(self, label)
+        return self.subplots.title(*args, **kwargs)
 
-        plt.sca(self.ax)
-        self._suptitle = plt.suptitle(label, *args, **kwargs)
-        self._position_title()
-        return self._suptitle
+    def legend(self, *args, **kwargs):
+        return self.subplots.legend(*args, **kwargs)
 
     def _release_queue(self):
         while len(self._queue):
@@ -305,35 +194,78 @@ class Chart:
     def show(self, *args, **kwargs):
         """Display the chart."""
         self._release_queue()
+        self._resize_colorbars()
         plt.show(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         """Save the chart."""
         self._release_queue()
+        self._resize_colorbars()
         plt.savefig(*args, **kwargs)
 
+    def _resize_colorbars(self):
+        positions = [subplot.ax.get_position() for subplot in self.subplots]
+        x0 = min(pos.x0 for pos in positions)
+        x1 = min(pos.x1 for pos in positions)
+        y0 = min(pos.y0 for pos in positions)
+        y1 = min(pos.y1 for pos in positions)
+        width = x1 - x0
+        height = y1 - y0
 
-class Tile(Chart):
-    def __init__(self, *args, figsize=(512, 512), **kwargs):
-        px = 1 / plt.rcParams["figure.dpi"]  # pixel in inches
-        figsize = tuple([dim * px for dim in figsize])
-        super().__init__(*args, figsize=figsize, **kwargs)
+        offset = {"right": 0, "left": 0, "bottom": 0, "top": 0}
 
-    @property
-    def ax(self):
-        if self._ax is None:
-            subplotspec = SubplotSpec(
-                GridSpec(1, 1, self.fig, left=0, right=1, bottom=0, top=1), 0
-            )
-            self._ax = self.fig.add_subplot(
-                subplotspec, frameon=False, projection=self.crs
-            )
-            if self.bounds is not None:
-                self._ax.set_extent(self.bounds, crs=self.crs)
-            self._ax.get_xaxis().set_visible(False)
-            self._ax.get_yaxis().set_visible(False)
-        return self._ax
+        if self._gridlines is not None:
+            pad = {"right": 0.045, "left": 0.045, "bottom": 0.02, "top": 0.02}
+            for side in offset:
+                if getattr(self._gridlines[0], f"{side}_labels"):
+                    offset[side] += pad[side]
 
-    def save(self, *args, **kwargs):
-        self._release_queue()
-        plt.savefig(*args, **kwargs)
+        for cbar in self._cbars:
+            if not getattr(cbar, "auto", False):
+                continue
+            position = {
+                "right": [
+                    x0 + width + 0.01 + offset["right"],
+                    y0,
+                    0.03,
+                    height,
+                ],
+                "left": [x0 - 0.06 - offset["left"], y0, 0.03, height],
+                "bottom": [x0, y0 - 0.04 - offset["bottom"], width, 0.03],
+                "top": [x0, y0 + height + 0.04 + offset["top"], width, 0.03],
+            }[cbar.location]
+            offset[cbar.location] += 0.1
+            cbar.ax.set_position(position)
+
+
+def auto_rows_cols(num_subplots, max_cols=8):
+    presets = {
+        1: (1, 1),
+        2: (1, 2),
+        3: (1, 3),
+        4: (1, 4),
+        5: (2, 3),
+        6: (2, 3),
+        7: (2, 4),
+        8: (2, 4),
+        9: (2, 5),
+        10: (2, 5),
+        11: (3, 4),
+        12: (3, 4),
+        13: (3, 5),
+        14: (3, 5),
+        15: (3, 5),
+        16: (3, 6),
+        17: (3, 6),
+        18: (3, 6),
+        19: (4, 5),
+        20: (4, 5),
+    }
+
+    if num_subplots in presets:
+        rows, cols = presets[num_subplots]
+    else:
+        cols = max_cols
+        rows = num_subplots // max_cols + 1
+
+    return rows, cols

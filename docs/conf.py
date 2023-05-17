@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath("../"))
 project = "earthkit-maps"
 copyright = "2023, European Centre for Medium Range Weather Forecasts"
 author = "European Centre for Medium Range Weather Forecasts"
-version = "0.0.0"#earthkit.maps.__version__
-release = "0.0.0"#earthkit.maps.__version__
+version = "0.0.0"  # earthkit.maps.__version__
+release = "0.0.0"  # earthkit.maps.__version__
 
 # -- General configuration ---------------------------------------------------
 

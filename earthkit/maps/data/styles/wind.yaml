@@ -1,0 +1,18 @@
+styles:
+
+  10m-wind-gust-6h:
+    style:
+      shaded_contour:
+        levels: [10, 15, 20, 25, 30, 35, 50]
+        colors: ["sky", "greenish_blue", "avocado", "orange", "orangish_red", "violet"]
+        edges: true
+      contour:
+        levels: [10, 15, 20, 25, 30, 35, 50]
+        colors: "navy"
+    units: m s-1
+    metadata-match:
+    - short_name: 10fg6
+    - name: 10 metre wind gust in the last 6 hours
+      # - standard_name: wind_speed_of_gust
+      #   height: 10m
+      #   time_bounds: 6 hours

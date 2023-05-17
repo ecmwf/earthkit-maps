@@ -30,7 +30,7 @@ class NaturalEarthDomain:
         self._domain_name = domain_name
         self._record = None
         self._source = None
-        self._crs = None
+        self._crs = crs
 
     @property
     def domain_name(self):

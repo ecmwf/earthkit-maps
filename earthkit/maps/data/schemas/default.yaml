@@ -1,6 +1,6 @@
 # Style
 font: Open Sans
-default_style: magma
+cmap: magma
 
 # Projections and interpolation
 reference_crs: PlateCarree
@@ -21,8 +21,9 @@ point:
 legend:
   location: right
   format: "%.4g"
-title: {}
-  # fontsize: 14
+title:
+  horizontalalignment: left
+  x: 0.125
 barbs:
   length: 5
   linewidth: 1
@@ -36,6 +37,7 @@ coastlines:
 borders:
   linestyle: "--"
   linewidth: 0.75
+  edgecolor: [0.2, 0.2, 0.2]
 roads:
   linestyle: "-"
   linewidth: 0.75
@@ -43,7 +45,7 @@ roads:
   alpha: 0.5
   facecolor: "none"
 land:
-  facecolor: "#e6e6e6"
+  color: "#b3b3b3"
 states_provinces:
   linestyle: ":"
   linewidth: 0.75

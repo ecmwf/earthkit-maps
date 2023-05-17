@@ -22,14 +22,10 @@ except ImportError:  # pragma: no cover
     # Local copy or not installed with setuptools
     __version__ = "999"
 
-from earthkit.maps.charts import Chart as Map
-from earthkit.maps.charts import Tile
-from earthkit.maps.schema import schema
+from .charts import Chart
+from .schema import schema
 
 __all__ = [
-    "__version__",
+    "Chart",
     "schema",
-    "Map",
-    "Tile",
-    "charts",
 ]

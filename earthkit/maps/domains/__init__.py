@@ -22,3 +22,13 @@ __all__ = [
     "projections",
     "Domain",
 ]
+
+
+def parse_domain(domain, crs):
+    if isinstance(domain, str):
+        domain = Domain.from_string(domain, crs)
+    elif domain is not None or crs is not None:
+        domain = Domain(domain, crs)
+    else:
+        domain = Domain()
+    return domain
