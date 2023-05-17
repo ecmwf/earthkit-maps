@@ -1,9 +1,7 @@
-
 import itertools
 from string import Formatter
 
 import numpy as np
-
 
 NO_CFUNITS = False
 try:
@@ -24,13 +22,12 @@ METADATA = {
 TIME_KEYS = ["base_time", "valid_time", "lead_time", "time"]
 
 
-
 def default_title(self):
     if "valid_time" in self.layers[0].data.datetime():
         return _default_forecast_title(self)
     else:
         return _default_title(self)
-    
+
 
 def _default_forecast_title(self):
     label = (
@@ -44,7 +41,6 @@ def _default_forecast_title(self):
 def _default_title(self):
     label = "{variable_name} at {valid_time:%H:%M} on {valid_time:%Y-%m-%d}"
     return format(self, label)
-
 
 
 def list_to_human(iterable, conjunction="and", oxford_comma=False):
@@ -64,10 +60,8 @@ class SubplotFormatter(Formatter):
     TOP_LEVEL_KEYS = {
         "domain": "domain",
     }
-    
-    LAYER_KEYS = [
-        "units"
-    ]
+
+    LAYER_KEYS = ["units"]
 
     def __init__(self, subplot):
         super().__init__()
@@ -102,7 +96,7 @@ class SubplotFormatter(Formatter):
         if value == key:
             value = f"no_{value}".upper()
         f = super().format_field
-        
+
         if isinstance(value, list):
             if len(set(value)) == 1:
                 result = f(value[0], format_spec)
@@ -115,42 +109,42 @@ class SubplotFormatter(Formatter):
 
 
 class TimeHandler:
-    
     def __init__(self, times):
         if not isinstance(times, (list, tuple)):
             times = [times]
         for i, time in enumerate(times):
             if not isinstance(time, dict):
-                times[i] = {"time": time}                
+                times[i] = {"time": time}
         self.times = times
-    
+
     def _extract_time(method):
         def wrapper(self):
             attr = method.__name__
             times = [self._named_time(time, attr) for time in self.times]
             _, indices = np.unique(times, return_index=True)
             return [times[i] for i in sorted(indices)]
+
         return property(wrapper)
-    
+
     @staticmethod
     def _named_time(time, attr):
         return time.get(attr, time.get("time"))
-    
+
     @property
     def time(self):
         return self.valid_time
-    
+
     @_extract_time
     def base_time(self):
         pass
-    
+
     @_extract_time
     def valid_time(self):
         pass
 
     @property
     def lead_time(self):
-        if len(self.base_time)==1 and len(self.valid_time)>1:
+        if len(self.base_time) == 1 and len(self.valid_time) > 1:
             times = itertools.product(self.base_time, self.valid_time)
         elif len(self.base_time) == len(self.valid_time):
             times = zip(self.base_time, self.valid_time)
@@ -162,11 +156,11 @@ class TimeHandler:
                 )
                 for time in self.times
             ]
-        return [int((vtime-btime).total_seconds()/3600) for btime, vtime in times]
-    
+        return [int((vtime - btime).total_seconds() / 3600) for btime, vtime in times]
+
 
 def get_metadata(layers, attr, layer=None):
-    
+
     if layer is not None:
         layers = [layers[layer]]
 
@@ -179,11 +173,11 @@ def get_metadata(layers, attr, layer=None):
             if not type(layer.data).__name__ == "GribField":
                 label = "UNABLE TO READ METADATA"
             else:
-                
+
                 if attr in TIME_KEYS:
                     handler = TimeHandler(layer.data.datetime())
                     label = getattr(handler, attr)[0]
-                
+
                 else:
                     candidates = [attr]
                     if attr in METADATA:

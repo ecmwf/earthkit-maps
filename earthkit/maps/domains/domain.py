@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import cv2
 import cartopy.crs as ccrs
+import cv2
+import numpy as np
 
 from earthkit.maps import _data, domains
 
@@ -43,10 +43,10 @@ class Domain:
         from . import natural_earth
 
         domain_name = lookup_name(string)
-        
+
         if crs is not None:
             crs = domains.crs.parse(crs)
-        
+
         if domain_name is not None and domain_name in DOMAIN_LOOKUP["domains"]:
             domain_config = DOMAIN_LOOKUP["domains"][domain_name]
             if isinstance(domain_config, list):
@@ -121,13 +121,13 @@ class Domain:
 
     def bbox(self, field):
         source_crs = field.crs()
-        
+
         points = field.to_points(flatten=False)
         values = field.to_numpy(flatten=False)
-        
+
         if self.bounds:
             crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
-            
+
             roll_by = None
             if crs_bounds[0] < 0 and crs_bounds[1] > 0:
                 if crs_bounds[0] < points["lon"].min():
@@ -145,7 +145,7 @@ class Domain:
                 points["lon"] = np.roll(points["lon"], roll_by, axis=1)
                 points["lat"] = np.roll(points["lat"], roll_by, axis=1)
                 values = np.roll(values, roll_by, axis=1)
-            
+
             bbox = np.where(
                 (points["lon"] >= crs_bounds[0])
                 & (points["lon"] <= crs_bounds[1])
@@ -183,4 +183,3 @@ def lookup_name(domain_name):
     domain_name = name_mapping.get(domain_name, domain_name)
 
     return domain_name
-

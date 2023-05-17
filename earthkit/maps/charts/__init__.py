@@ -1,15 +1,14 @@
-
 import glob
-import os
 import itertools
+import os
 
-from matplotlib import font_manager, rcParams
-import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+from matplotlib import font_manager, rcParams
 
-from earthkit.maps import domains, sources
+from earthkit.maps import domains
 from earthkit.maps._definitions import FONTS_DIR
-from earthkit.maps.charts import titles, layers, styles
+from earthkit.maps.charts import layers
 from earthkit.maps.schema import schema
 
 
@@ -36,13 +35,16 @@ def await_crs(method):
 
 
 class Chart:
-    
     def __init__(
-            self, figure=None, domain=None, crs=None, figsize=(10, 7.5),
-            **kwargs,            
-        ):
+        self,
+        figure=None,
+        domain=None,
+        crs=None,
+        figsize=(10, 7.5),
+        **kwargs,
+    ):
         self.domain = domains.parse_domain(domain, crs)
-        
+
         if figure is None:
             self.fig = plt.figure(figsize=figsize)
         else:
@@ -63,47 +65,49 @@ class Chart:
 
         self._queue = []
         self._cbars = []
-        
+
         self._gridlines = None
-    
+
     @property
     def iter_subplots(self):
         if self._iter_subplots is None:
             self._iter_subplots = (
-                (i, j) for i, j in itertools.product(
+                (i, j)
+                for i, j in itertools.product(
                     range(self.gridspec.nrows),
                     range(self.gridspec.ncols),
                 )
             )
         return self._iter_subplots
-    
+
     @property
     def rows(self):
         if self._rows is None:
             self._rows = 1
         return self._rows
-    
+
     @property
     def cols(self):
         if self._cols is None:
             self._cols = 1
         return self._cols
-    
+
     @property
     def gridspec(self):
         if self._gridspec is None:
             self._gridspec = self.fig.add_gridspec(
-                nrows=self.rows, ncols=self.cols,
+                nrows=self.rows,
+                ncols=self.cols,
             )
         return self._gridspec
-    
-    def add_subplot(self, *args, data=None, domain=None, crs=None, **kwargs):        
+
+    def add_subplot(self, *args, data=None, domain=None, crs=None, **kwargs):
         # Always increment the unplotted subplots
         i, j = next(self.iter_subplots)
-        
+
         if not args:
             args = (self.gridspec[i, j],)
-        
+
         if data is not None:
             subplot = layers.Subplot.from_data(self, data, *args, **kwargs)
         else:
@@ -111,7 +115,7 @@ class Chart:
 
         self.subplots.add_subplot(subplot)
         return subplot
-    
+
     def expand_subplots(method):
         def wrapper(self, data, *args, **kwargs):
             if self._rows is None:
@@ -120,14 +124,15 @@ class Chart:
                 else:
                     self._rows, self._cols = 1, 1
             return method(self, data, *args, **kwargs)
+
         return wrapper
-    
+
     @property
     def axes(self):
         if not self._axes:
             self.add_subplot()
         return self._axes
-    
+
     @property
     def ax(self):
         return self._axes[self._ax_idx]
@@ -160,7 +165,7 @@ class Chart:
     @expand_subplots
     def pcolormesh(self, data, *args, **kwargs):
         self.subplots.pcolormesh(data, *args, **kwargs)
-    
+
     @expand_subplots
     def contourf(self, data, *args, **kwargs):
         return self.subplots.contourf(data, *args, **kwargs)
@@ -198,7 +203,6 @@ class Chart:
         self._resize_colorbars()
         plt.savefig(*args, **kwargs)
 
-
     def _resize_colorbars(self):
         positions = [subplot.ax.get_position() for subplot in self.subplots]
         x0 = min(pos.x0 for pos in positions)
@@ -207,7 +211,7 @@ class Chart:
         y1 = min(pos.y1 for pos in positions)
         width = x1 - x0
         height = y1 - y0
-        
+
         offset = {"right": 0, "left": 0, "bottom": 0, "top": 0}
 
         if self._gridlines is not None:
@@ -257,11 +261,11 @@ def auto_rows_cols(num_subplots, max_cols=8):
         19: (4, 5),
         20: (4, 5),
     }
-    
+
     if num_subplots in presets:
         rows, cols = presets[num_subplots]
     else:
         cols = max_cols
-        rows = num_subplots//max_cols + 1
-    
+        rows = num_subplots // max_cols + 1
+
     return rows, cols

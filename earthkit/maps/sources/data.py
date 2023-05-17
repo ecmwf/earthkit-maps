@@ -1,6 +1,4 @@
-
 from earthkit.maps import domains
-from earthkit.maps.charts import layers
 
 
 def matplotlibify(method):
@@ -14,9 +12,9 @@ def matplotlibify(method):
         x = points["lon"]
         y = points["lat"]
         transform = kwargs.pop("transform", crs)
-        
-        return getattr(plot_ax, method.__name__)(
+
+        return getattr(self.ax, method.__name__)(
             x, y, values, *args, transform=transform, **kwargs
         )
-    return deconstruct
 
+    return deconstruct

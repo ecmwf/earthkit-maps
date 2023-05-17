@@ -1,8 +1,6 @@
-
 from cf_units import Unit
 
 from earthkit.maps import _data
-
 
 EARTHKIT_COLORS = _data.load("colors/earthkit.yaml")
 
@@ -23,6 +21,7 @@ def guess(method):
             if "cmap" in kwargs:
                 kwargs.pop("colors", None)
         return method(self, data, *args, **kwargs)
+
     return wrapper
 
 
