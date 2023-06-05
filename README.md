@@ -1,5 +1,7 @@
 # earthkit.maps
 
+![earthkit-maps](docs/_static/earthkit-maps.png)
+
 Geospatial visualisation tools and templates
 
 **DISCLAIMER**
