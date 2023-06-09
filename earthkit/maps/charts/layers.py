@@ -165,8 +165,8 @@ class Subplot:
                     raise ImportError("cf_units is required for unit conversion")
                 values = cf_units.Unit(data.metadata("units")).convert(values, units)
 
-            x = points["lon"]
-            y = points["lat"]
+            x = points["x"]
+            y = points["y"]
             kwargs["transform"] = kwargs.pop("transform", (data[0] if vector else data).projection().to_cartopy_crs())
             if vector:
                 values_v, _ = self.domain.bbox(data[1])
