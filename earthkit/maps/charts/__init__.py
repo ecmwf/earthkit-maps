@@ -176,6 +176,10 @@ class Chart:
     def contour(self, data, *args, **kwargs):
         return self.subplots.contour(data, *args, **kwargs)
 
+    @schema.barbs.apply()
+    def barbs(self, data, *args, **kwargs):
+        return self.subplots.barbs(data, *args, **kwargs)
+
     def subplot_titles(self, *args, **kwargs):
         return self.subplots.titles(*args, **kwargs)
 

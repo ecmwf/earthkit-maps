@@ -58,7 +58,7 @@ class Subplot:
     def from_data(cls, chart, data, *args, **kwargs):
         crs = None
         if chart.domain.crs is None:
-            crs = data.crs()
+            crs = data.projection().to_cartopy_crs()
         return cls(chart, *args, crs=crs, **kwargs)
 
     def __init__(self, chart, *args, domain=None, crs=None, **kwargs):
@@ -154,9 +154,9 @@ class Subplot:
         self._chart._cbars = cbars
         return cbars
 
-    def add_layer(self, method):
+    def add_layer(self, method, vector=False):
         def wrapper(data, *args, units=None, legend=True, **kwargs):
-            values, points = self.domain.bbox(data)
+            values, points = self.domain.bbox(data[0] if vector else data)
 
             if units is not None:
                 try:
@@ -165,10 +165,14 @@ class Subplot:
                     raise ImportError("cf_units is required for unit conversion")
                 values = cf_units.Unit(data.metadata("units")).convert(values, units)
 
-            x = points["x"]
-            y = points["y"]
-            kwargs["transform"] = kwargs.pop("transform", data.crs())
-            layer = method(x, y, values, *args, **kwargs)
+            x = points["lon"]
+            y = points["lat"]
+            kwargs["transform"] = kwargs.pop("transform", (data[0] if vector else data).projection().to_cartopy_crs())
+            if vector:
+                values_v, _ = self.domain.bbox(data[1])
+                layer = method(x, y, values, values_v, *args, **kwargs)
+            else:
+                layer = method(x, y, values, *args, **kwargs)
             self.layers.append(DataLayer(data, layer, units=units, legend=legend))
 
         return wrapper
@@ -178,6 +182,7 @@ class Subplot:
         if colors is not None:
             colors = styles.parse_colors(colors)
             kwargs.pop("cmap", None)
+            kwargs["colors"] = colors
         return self.add_layer(self.ax.contour)(*args, **kwargs)
 
     @styles.guess
@@ -198,6 +203,9 @@ class Subplot:
         )
 
     shaded_contour = contourf
+    
+    def barbs(self, *args, **kwargs):
+        return self.add_layer(self.ax.barbs, vector=True)(*args, **kwargs)
 
 
 class Subplots:

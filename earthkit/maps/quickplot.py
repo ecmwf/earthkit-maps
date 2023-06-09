@@ -1,18 +1,21 @@
 from earthkit.maps import Chart
+from earthkit.maps.schema import schema
 
 DEFAULT_WORKFLOW = {
     "coastlines": dict(),
+    "borders": dict(),
     "gridlines": dict(),
-    "title": dict(),
+    "subplot_titles": dict(),
     "legend": dict(),
 }
 
 
-def quickplot(data, workflow=None, **kwargs):
+@schema.apply("cmap")
+def quickplot(data, workflow=None, units=None, levels=None, cmap=None, **kwargs):
     workflow = {**DEFAULT_WORKFLOW, **(workflow or dict())}
 
     chart = Chart(**kwargs)
-    chart.shaded_contour(data)
+    chart.shaded_contour(data, levels=levels, cmap=cmap, units=units)
 
     for step, step_kwargs in workflow.items():
         getattr(chart, step)(**step_kwargs)

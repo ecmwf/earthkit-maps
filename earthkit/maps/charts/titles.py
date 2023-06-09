@@ -184,7 +184,7 @@ def get_metadata(layers, attr, layer=None):
                         candidates = METADATA[attr]["preference"] + candidates
 
                     for item in candidates:
-                        label = layer.data.metadata(item)
+                        label = layer.data.metadata(item, default=None)
                         if label is not None:
                             break
                     else:
