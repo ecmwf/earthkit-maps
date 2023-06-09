@@ -9,6 +9,8 @@ AUTOMATIC_STYLES = _data.load("styles/wind.yaml")
 
 def parse_colors(colors):
     parsed_colors = []
+    if not isinstance(colors, (list, tuple)):
+        colors = [colors]
     for color in colors:
         parsed_colors.append(EARTHKIT_COLORS.get(color, color))
     return parsed_colors

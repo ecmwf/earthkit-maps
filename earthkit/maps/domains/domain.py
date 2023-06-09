@@ -120,7 +120,7 @@ class Domain:
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
 
     def bbox(self, field):
-        source_crs = field.crs()
+        source_crs = field.projection().to_cartopy_crs()
 
         points = field.to_points(flatten=False)
         values = field.to_numpy(flatten=False)

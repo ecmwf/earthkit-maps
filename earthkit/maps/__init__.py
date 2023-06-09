@@ -24,8 +24,10 @@ except ImportError:  # pragma: no cover
 
 from .charts import Chart
 from .schema import schema
+from .quickplot import quickplot
 
 __all__ = [
     "Chart",
     "schema",
+    "quickplot",
 ]
