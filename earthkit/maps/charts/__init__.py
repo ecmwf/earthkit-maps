@@ -173,6 +173,10 @@ class Chart:
     shaded_contour = contourf
 
     @expand_subplots
+    def tricontourf(self, data, *args, **kwargs):
+        return self.subplots.tricontourf(data, *args, **kwargs)
+
+    @expand_subplots
     def contour(self, data, *args, **kwargs):
         return self.subplots.contour(data, *args, **kwargs)
 

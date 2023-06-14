@@ -125,7 +125,7 @@ class Domain:
         points = field.to_points(flatten=False)
         values = field.to_numpy(flatten=False)
 
-        if self.bounds:
+        if self.bounds and False:
             crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
 
             roll_by = None

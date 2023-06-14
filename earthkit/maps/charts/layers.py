@@ -47,6 +47,7 @@ class Subplot:
     DATA_LAYER_METHODS = [
         "contour",
         "contourf",
+        "tricontourf",
     ]
 
     LEGENDS = {
@@ -166,6 +167,9 @@ class Subplot:
                 values = cf_units.Unit(data.metadata("units")).convert(values, units)
 
             x = points["x"]
+            if method.__name__ == "tricontourf":
+                x[x>180] -=360.
+            
             y = points["y"]
             kwargs["transform"] = kwargs.pop("transform", (data[0] if vector else data).projection().to_cartopy_crs())
             if vector:
@@ -200,6 +204,15 @@ class Subplot:
             kwargs.pop("cmap", None)
         return self.add_layer(self.ax.contourf)(
             *args, colors=colors, transform_first=transform_first, **kwargs
+        )
+
+    @schema.apply("cmap")
+    def tricontourf(self, *args, colors=None, transform_first=True, **kwargs):
+        if colors is not None:
+            colors = styles.parse_colors(colors)
+            kwargs.pop("cmap", None)
+        return self.add_layer(self.ax.tricontourf)(
+            *args, colors=colors, **kwargs
         )
 
     shaded_contour = contourf
