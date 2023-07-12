@@ -47,7 +47,7 @@ class Style:
     def levels(self):
         return self._levels
 
-    def to_kwargs(self, data):
+    def to_kwargs(self, data, method):
         cmap = LinearSegmentedColormap.from_list(
             name="", colors=self.colors, N=len(self.colors)
         )
@@ -56,7 +56,11 @@ class Style:
         if self._normalize:
             norm = BoundaryNorm(self.levels, cmap.N)
 
-        return {"cmap": cmap, "norm": norm, "levels": self.levels}
+        kwargs = {"cmap": cmap, "norm": norm}
+        if method.__name__ != "pcolormesh":
+            kwargs["levels"] = self.levels
+
+        return kwargs
 
 
 class IntervalStyle(Style):

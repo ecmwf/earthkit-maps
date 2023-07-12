@@ -144,7 +144,7 @@ class Subplot:
                 values = (values, v_field)
 
             if style is not None:
-                kwargs = {**kwargs, **style.to_kwargs(data)}
+                kwargs = {**kwargs, **style.to_kwargs(data, method)}
 
             layer = method(x, y, *values, *args, transform=transform, **kwargs)
 
@@ -244,12 +244,25 @@ class Subplot:
         return self._gridlines
 
     @await_crs
-    def ocean(self, color):
-        self.ax.set_facecolor(color)
+    def ocean(self, *args, resolution="auto", **kwargs):
+        """Add ocean polygons from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: (str, optional)
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+        """
+        resolution = NE_RESOLUTIONS.get(resolution, resolution)
+        if resolution == "auto":
+            feature = cfeature.OCEAN
+        else:
+            feature = cfeature.NaturalEarthFeature("physical", "ocean", resolution)
+        return self.ax.add_feature(feature, *args, **kwargs)
 
     @await_crs
     def land(self, *args, resolution="auto", **kwargs):
-        """Add land polygons from the Natural Earth “coastline” collection.
+        """Add land polygons from the Natural Earth collection.
 
         Parameters
         ----------
@@ -279,6 +292,9 @@ class Subplot:
             *args, transform_first=transform_first, **kwargs
         )
 
+    def pcolormesh(self, *args, **kwargs):
+        return self.add_layer(self.ax.pcolormesh)(*args, **kwargs)
+
     def contour(
         self,
         *args,
@@ -289,6 +305,7 @@ class Subplot:
         label_colors=None,
         label_frequency=1,
         label_background=None,
+        label_fmt=None,
         **kwargs,
     ):
         if transform_first is None:
@@ -304,6 +321,7 @@ class Subplot:
                 inline=True,
                 fontsize=label_fontsize,
                 colors=label_colors,
+                fmt=label_fmt,
                 inline_spacing=2,
             )
             if label_background is not None:

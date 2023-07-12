@@ -179,6 +179,7 @@ class Chart:
     def stock_img(self, *args, **kwargs):
         pass
 
+    @expand_subplots
     @_global
     def pcolormesh(self, *args, **kwargs):
         pass

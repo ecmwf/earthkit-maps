@@ -47,8 +47,12 @@ def colorbar(
     if format is not None:
         kwargs["format"] = lambda x, _: f"{x:{format}}"
 
-    if "ticks" not in kwargs and len(np.unique(np.ediff1d(layer.layer.levels))):
-        kwargs["ticks"] = layer.layer.levels
+    try:
+        levels = layer.layer.norm.boundaries
+    except AttributeError:
+        levels = layer.layer.levels
+    if "ticks" not in kwargs and len(np.unique(np.ediff1d(levels))) != 1:
+        kwargs["ticks"] = levels
 
     cbar = plt.colorbar(layer.layer, orientation=orientation, **kwargs)
 
