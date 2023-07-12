@@ -16,7 +16,7 @@ from functools import partial
 
 import yaml
 
-from earthkit.maps import _definitions
+from earthkit.maps import definitions
 
 READERS = {
     ".yaml": partial(yaml.load, Loader=yaml.SafeLoader),
@@ -43,7 +43,7 @@ def load(source, data_type=None):
         If applicable, the name of the subdirectory withing magpye/data in which
         the auxilliary file will be found.
     """
-    path = _definitions.DATA_DIR
+    path = definitions.DATA_DIR
     if data_type is not None:
         path /= data_type
 

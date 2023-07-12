@@ -12,23 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import bounds, crs, optimal, projections
+from earthkit.data.utils.projections import Projection
+
+from earthkit.maps.schema import schema
+
+from . import bounds, crs, optimal
 from .domain import Domain
 
 __all__ = [
     "bounds",
     "crs",
     "optimal",
-    "projections",
     "Domain",
 ]
 
 
 def parse_domain(domain, crs):
+    if isinstance(crs, Projection):
+        crs = crs.to_cartopy_crs()
+
     if isinstance(domain, str):
         domain = Domain.from_string(domain, crs)
     elif domain is not None or crs is not None:
         domain = Domain(domain, crs)
     else:
-        domain = Domain()
+        domain = Domain(domain, schema.reference_crs)
     return domain

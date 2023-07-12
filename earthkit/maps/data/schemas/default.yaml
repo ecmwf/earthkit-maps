@@ -1,6 +1,8 @@
 # Style
 font: Open Sans
 cmap: magma
+figsize: [10, 7.5]
+dpi: 100
 
 # Projections and interpolation
 reference_crs: PlateCarree
@@ -13,17 +15,16 @@ time_format: "%H:%M"
 # Plotting defaults
 contour:
   colors: black
-  labels: true
+  labels: false
   label_fontsize: 7
-  linewidths: [1, 0.75, 0.75, 0.75]
+  linewidths: 0.5
 point:
   marker: o
 legend:
   location: right
   format: "%.4g"
 title:
-  horizontalalignment: left
-  x: 0.125
+  horizontalalignment: center
 barbs:
   length: 5
   linewidth: 1
@@ -33,25 +34,30 @@ barbs:
 
 # Auxilliary layers defaults
 coastlines:
-  linewidth: 0.75
+  linewidth: 0.5
+  color: "#333333"
 borders:
   linestyle: "--"
-  linewidth: 0.75
+  linewidth: 0.5
   edgecolor: [0.2, 0.2, 0.2]
+  facecolor: "none"
 roads:
   linestyle: "-"
-  linewidth: 0.75
+  linewidth: 0.5
   edgecolor: "#ffcc00"
   alpha: 0.5
   facecolor: "none"
 land:
-  color: "#b3b3b3"
+  color: "#E0CBA8"
+ocean:
+  color: "#C3EDFF"
 states_provinces:
   linestyle: ":"
-  linewidth: 0.75
+  linewidth: 0.5
 gridlines:
+  linewidth: 0.75
   linestyle: "--"
-  edgecolor: grey
+  edgecolor: "#555"
   alpha: 0.8
   x_inline: false
   y_inline: false

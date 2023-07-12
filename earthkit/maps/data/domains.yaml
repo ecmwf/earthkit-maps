@@ -20,6 +20,8 @@ domains:
   Southwest Europe: [-25, 15, 34, 45]
   Mediterranean: [-8, 36, 28, 44]
 
+  Svalbard: [9, 33, 76, 81]
+
   Africa: [-22, 54, -37, 40]
 
   Arctic:
@@ -32,6 +34,8 @@ domains:
       name: TransverseMercator
       central_latitude: 52.5
       central_longitude: 85
+
+  Oceania: [105, 240, -50, 30]
 
   North Atlantic: [-50, 35, 32, 72]
   North America: [-140, -60, 2, 85]

@@ -16,7 +16,7 @@ import os
 
 import yaml
 
-from earthkit.maps import _definitions
+from earthkit.maps import definitions
 from earthkit.maps.domains import crs
 from earthkit.maps.utils import recursive_dict_update
 
@@ -162,7 +162,7 @@ class Schema(dict):
         -------
         >>> schema.use("default")
         """
-        file_name = _definitions.SCHEMA_DIR / f"{name}.yaml"
+        file_name = definitions.SCHEMA_DIR / f"{name}.yaml"
         if not os.path.exists(file_name):
             raise SchemaNotFoundError(f"no schema '{name}' found")
         with open(file_name, "r") as f:
