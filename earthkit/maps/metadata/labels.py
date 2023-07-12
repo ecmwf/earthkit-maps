@@ -129,7 +129,7 @@ def get_metadata(data, attr, layer=None):
                 if label is not None:
                     break
             else:
-                label = f"<NO {attr.upper()}>"
+                raise KeyError(f"No key {attr} found in metadata")
 
         labels.append(label)
 
