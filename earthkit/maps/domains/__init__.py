@@ -14,8 +14,6 @@
 
 from earthkit.data.utils.projections import Projection
 
-from earthkit.maps.schema import schema
-
 from . import bounds, crs, optimal
 from .domain import Domain
 
@@ -27,7 +25,9 @@ __all__ = [
 ]
 
 
-def parse_domain(domain, crs):
+def parse(domain, crs):
+    from earthkit.maps.schemas import schema
+
     if isinstance(crs, Projection):
         crs = crs.to_cartopy_crs()
 

@@ -15,7 +15,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from earthkit.maps.metadata import labels
+# from earthkit.maps.metadata import labels
 
 DEFAULT_COLORBAR_TITLE = "{variable_name} ({units})"
 
@@ -56,14 +56,14 @@ def colorbar(
 
     cbar = plt.colorbar(layer.layer, orientation=orientation, **kwargs)
 
-    if title:
-        rotation = {"right": 270, "left": 90, "top": 0, "bottom": 0}[location]
-        labelpad = {"right": 20, "left": -60, "top": -60, "bottom": 0}[location]
-        cbar.set_label(
-            labels.title_from_layer(layer, title),
-            rotation=rotation,
-            labelpad=labelpad,
-        )
+    # if title:
+    #     rotation = {"right": 270, "left": 90, "top": 0, "bottom": 0}[location]
+    #     labelpad = {"right": 20, "left": -60, "top": -60, "bottom": 0}[location]
+    #     cbar.set_label(
+    #         labels.title_from_layer(layer, title),
+    #         rotation=rotation,
+    #         labelpad=labelpad,
+    #     )
 
     cbar.auto = auto  # indicate whether the colorbar location is automatic
 

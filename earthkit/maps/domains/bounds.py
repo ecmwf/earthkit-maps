@@ -15,7 +15,7 @@
 import cartopy.crs as ccrs
 import numpy as np
 
-from earthkit.maps.schema import schema
+from earthkit.maps.schemas import schema
 
 CYCLIC_SYSTEMS = ["PlateCarree", "Mercator"]
 

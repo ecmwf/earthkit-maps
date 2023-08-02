@@ -16,6 +16,28 @@ import itertools
 from string import Formatter
 
 import numpy as np
+from cf_units import Unit
+from cf_units.tex import tex
+
+
+class BaseFormatter(Formatter):
+
+    SUBPLOT_ATTRIBUTES = {
+        "domain": "domain",
+        "crs": "crs_name",
+    }
+
+    STYLE_ATTRIBUTES = {
+        "units": "units",
+    }
+
+    def format(self, format_string, /, *args, **kwargs):
+        keys = (i[1] for i in self.parse(format_string) if i[1] is not None)
+        for key in keys:
+            if key not in kwargs:
+                kwargs[key] = key
+        return super().format(format_string, *args, **kwargs)
+
 
 DEFAULT_FORECAST_TITLE = (
     "{variable_name}\n"
@@ -25,7 +47,6 @@ DEFAULT_FORECAST_TITLE = (
 DEFAULT_ANALYSIS_TITLE = (
     "{variable_name} at {valid_time:%H:%M} on {valid_time:%Y-%m-%d}"
 )
-DEFAULT_LEGEND_TITLE = "{variable_name} ({units})"
 
 TIME_KEYS = ["base_time", "valid_time", "lead_time", "time"]
 
@@ -42,98 +63,55 @@ PRETTY_UNITS = {
 }
 
 
-class SubplotFormatter(Formatter):
+def default_label(data):
+    if data.metadata("type") == "an":
+        format_string = DEFAULT_ANALYSIS_TITLE
+    else:
+        format_string = DEFAULT_FORECAST_TITLE
+    return format_string
 
-    SUBPLOT_ATTRS = {
-        "domain": "domain",
-        "crs": "crs_name",
-    }
 
-    LAYER_ATTRS = {
-        "units": "units",
-    }
+def compare_units(unit_1, unit_2):
+    from cf_units import Unit
 
-    def __init__(self, subplot):
-        super().__init__()
-        self.subplot = subplot
-        self.layers = subplot.distinct_layers()
-        self.data = [layer.data for layer in self.layers]
-        self._current_layer = None
+    return Unit(unit_1) == Unit(unit_2)
 
-    def format(self, format_string, /, *args, **kwargs):
-        if format_string is None:
-            if self.data[0].metadata("type") == "an":
-                format_string = DEFAULT_ANALYSIS_TITLE
-            else:
-                format_string = DEFAULT_FORECAST_TITLE
-        format_keys = [i[1] for i in self.parse(format_string) if i[1] is not None]
-        for key in format_keys:
-            if key not in kwargs:
-                kwargs[key] = key
-        return super().format(format_string, *args, **kwargs)
 
-    def convert_field(self, value, conversion):
-        if conversion is not None and conversion.isnumeric():
-            self._current_layer = int(conversion)
-            conversion = None
-        return super().convert_field(value, conversion)
+def format_units(units):
+    for name, formatted_units in PRETTY_UNITS.items():
+        try:
+            if compare_units(units, name):
+                units = formatted_units
+                break
+        except ValueError:
+            continue
+    else:
+        try:
+            units = str(Unit(units))
+        except ValueError:
+            pass
+    return f"${tex(units)}$"
 
-    def format_field(self, value, format_spec):
-        key = value
-        if value in self.SUBPLOT_ATTRS:
-            value = getattr(self.subplot, self.SUBPLOT_ATTRS[value])
-        elif value in self.LAYER_ATTRS:
-            value = getattr(self.layers[0], self.LAYER_ATTRS[value])
+
+def get_metadata(layer, attr):
+
+    if attr in TIME_KEYS:
+        handler = TimeHandler(layer.data.datetime())
+        label = getattr(handler, attr)[0]
+
+    else:
+        candidates = [attr]
+        if attr in MAGIC_KEYS:
+            candidates = MAGIC_KEYS[attr]["preference"] + candidates
+
+        for item in candidates:
+            label = layer.data.metadata(item, default=None)
+            if label is not None:
+                break
         else:
-            value = get_metadata(self.data, value, self._current_layer)
-        if value == key:
-            value = f"?{value}?"
-        f = super().format_field
+            raise KeyError(f"No key {attr} found in metadata")
 
-        if isinstance(value, list):
-            if len(set(value)) == 1:
-                result = f(value[0], format_spec)
-            else:
-                result = list_to_human(f(v, format_spec) for v in value)
-        else:
-            result = f(value, format_spec)
-        self._current_layer = None
-        return str(result)
-
-
-class LayerFormatter(SubplotFormatter):
-    def __init__(self, layer):
-        Formatter().__init__()
-        self.subplot = None
-        self.layers = [layer]
-        self.data = [layer.data]
-        self._current_layer = None
-
-
-def get_metadata(data, attr, layer=None):
-
-    labels = []
-    for field in data:
-
-        if attr in TIME_KEYS:
-            handler = TimeHandler(field.datetime())
-            label = getattr(handler, attr)[0]
-
-        else:
-            candidates = [attr]
-            if attr in MAGIC_KEYS:
-                candidates = MAGIC_KEYS[attr]["preference"] + candidates
-
-            for item in candidates:
-                label = field.metadata(item, default=None)
-                if label is not None:
-                    break
-            else:
-                raise KeyError(f"No key {attr} found in metadata")
-
-        labels.append(label)
-
-    return labels
+    return label
 
 
 class TimeHandler:
@@ -197,11 +175,3 @@ def list_to_human(iterable, conjunction="and", oxford_comma=False):
             list_of_strs[0] += ","
 
     return f" {conjunction} ".join(list_of_strs)
-
-
-def title_from_subplot(subplot, label):
-    return SubplotFormatter(subplot).format(label)
-
-
-def title_from_layer(layer, label):
-    return LayerFormatter(layer).format(label)

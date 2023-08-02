@@ -12,23 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from earthkit.maps import Chart
+from earthkit.maps import definitions
 
-WORKFLOW = [
-    "coastlines",
-    "land",
-    "borders",
-    "gridlines",
-]
-
-
-def quickplot(data=None, **kwargs):
-    chart = Chart(**kwargs)
-
-    if data is not None:
-        raise NotImplementedError
-
-    for item in WORKFLOW:
-        getattr(chart, item)()
-
-    chart.show()
+ECMWF = definitions.DATA_DIR / "logos" / "ecmwf.png"
