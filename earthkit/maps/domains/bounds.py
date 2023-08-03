@@ -15,7 +15,6 @@
 import cartopy.crs as ccrs
 import numpy as np
 
-from earthkit.maps.schemas import schema
 
 CYCLIC_SYSTEMS = ["PlateCarree", "Mercator"]
 
@@ -83,7 +82,7 @@ def from_bbox(extents, crs, src_crs=None):
     list
     """
     if src_crs is None:
-        src_crs = schema.reference_crs
+        src_crs = ccrs.PlateCarree()
 
     ll_grid = crs.__class__.__name__ in CYCLIC_SYSTEMS
 

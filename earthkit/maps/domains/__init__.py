@@ -14,8 +14,8 @@
 
 from earthkit.data.utils.projections import Projection
 
-from . import bounds, crs, optimal
-from .domain import Domain
+from earthkit.maps.domains import bounds, crs, optimal
+from earthkit.maps.domains.domain import Domain
 
 __all__ = [
     "bounds",
