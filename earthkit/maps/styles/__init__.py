@@ -93,6 +93,7 @@ class Style:
         normalize=True,
         legend_type="colorbar",
         categories=None,
+        scale_factor=None,
         **kwargs,
     ):
         if colors == "auto":
@@ -109,6 +110,8 @@ class Style:
         self._units = units
         self.normalize = normalize
         self.kwargs = kwargs
+        
+        self.scale_factor = scale_factor
 
         self._categories = categories
 
@@ -118,6 +121,9 @@ class Style:
             return metadata.format_units(self._units)
 
     def convert_units(self, values, source_units):
+        if self.scale_factor is not None:
+            values *= self.scale_factor
+        
         if self._units is None:
             return values
         return Unit(source_units).convert(values, self._units)
@@ -372,8 +378,8 @@ class Contour(Style):
         self._interpolate = interpolate
         self.kwargs["linewidths"] = kwargs.get("linewidths", 0.5)
 
-    # def get_levels(self, layer):
-    #     return layer.mappable.levels
+    def get_levels(self, layer):
+        return layer.mappable.levels
 
     def plot(self, *args, **kwargs):
         if self._colors is not None:
@@ -451,6 +457,47 @@ class Contour(Style):
                 label.set_backgroundcolor(label_background)
 
         return clabels
+
+
+class Continuous(Contour):
+
+    def __init__(self, *args, gradients=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gradients = gradients
+
+    def to_kwargs(self, data):
+        levels = self.levels(data)
+
+        colors = self._colors
+        if colors is None:
+            colors = self._line_colors or schema.cmap
+        colors = expand_colors(colors, levels)
+
+        normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
+        color_bins = list(zip(normalised, colors))
+        cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
+        
+        gradients = self.gradients or [int(255/len(levels))]*(len(levels)-1)
+
+        extrapolated_levels = []
+        for i in range(len(levels)-1):
+            bins = list(np.linspace(levels[i], levels[i+1], gradients[i]))
+            extrapolated_levels += bins[(1 if i!=0 else 0):]
+        levels = extrapolated_levels
+
+        norm = None
+        if self.normalize:
+            norm = BoundaryNorm(levels, cmap.N)
+            
+        cmap.set_bad('#D9D9D9',1.)
+
+        return {
+            **{"cmap": cmap, "norm": norm, "levels": levels},
+            **self.kwargs,
+        }
+
+    def colorbar(self, *args, ticks=None, **kwargs):
+        super().colorbar(*args, ticks=ticks, **kwargs)
 
 
 class Hatched(Contour):

@@ -33,6 +33,7 @@ from earthkit.maps.schemas import schema
 __all__ = [
     "styles",
     "Superplot",
+    "schema",
 ]
 
 

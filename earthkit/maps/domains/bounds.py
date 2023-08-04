@@ -81,6 +81,10 @@ def from_bbox(extents, crs, src_crs=None):
     -------
     list
     """
+    # TODO: Implement bbox conversion for stereographic projections
+    if isinstance(src_crs, ccrs.Stereographic):
+        raise NotImplementedError(f"cannot convert bbox for CRS {src_crs}")
+    
     if src_crs is None:
         src_crs = ccrs.PlateCarree()
 

@@ -56,6 +56,12 @@ class Superplot:
 
     MAX_COLS = 8
 
+    @classmethod
+    def from_gridspec(cls, gridspec, *args, **kwargs):
+        obj = cls(*args, **kwargs)
+        obj._gridspec = gridspec
+        return obj
+
     def __init__(self, domain=None, crs=None, rows=None, cols=None):
         self._domain = domain
         self._crs = crs

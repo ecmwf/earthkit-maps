@@ -125,49 +125,54 @@ class Domain:
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
 
     def bbox(self, field):
+        from earthkit.maps.schemas import schema
         source_crs = field.projection().to_cartopy_crs()
 
         points = field.to_points(flatten=False)
         values = field.to_numpy(flatten=False)
 
-        if self.bounds:
-            crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
+        if self.bounds and schema.extract_domain:
+            
+            try:
+                crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
+            except NotImplementedError:
+                pass
+            else:
+                roll_by = None
+                if crs_bounds[0] < 0 and crs_bounds[1] > 0:
+                    if crs_bounds[0] < points["x"].min():
+                        roll_by = roll_from_0_360_to_minus_180_180(points["x"])
+                        points["x"] = force_minus_180_to_180(points["x"])
+                        for i in range(2):
+                            crs_bounds[i] = force_minus_180_to_180(crs_bounds[i])
+                elif crs_bounds[0] < 180 and crs_bounds[1] > 180:
+                    if crs_bounds[1] > points["x"].max():
+                        roll_by = roll_from_minus_180_180_to_0_360(points["x"])
+                        points["x"] = force_0_to_360(points["x"])
+                        for i in range(2):
+                            crs_bounds[i] = force_0_to_360(crs_bounds[i])
+                if roll_by is not None:
+                    points["x"] = np.roll(points["x"], roll_by, axis=1)
+                    points["y"] = np.roll(points["y"], roll_by, axis=1)
+                    values = np.roll(values, roll_by, axis=1)
 
-            roll_by = None
-            if crs_bounds[0] < 0 and crs_bounds[1] > 0:
-                if crs_bounds[0] < points["x"].min():
-                    roll_by = roll_from_0_360_to_minus_180_180(points["x"])
-                    points["x"] = force_minus_180_to_180(points["x"])
-                    for i in range(2):
-                        crs_bounds[i] = force_minus_180_to_180(crs_bounds[i])
-            elif crs_bounds[0] < 180 and crs_bounds[1] > 180:
-                if crs_bounds[1] > points["x"].max():
-                    roll_by = roll_from_minus_180_180_to_0_360(points["x"])
-                    points["x"] = force_0_to_360(points["x"])
-                    for i in range(2):
-                        crs_bounds[i] = force_0_to_360(crs_bounds[i])
-            if roll_by is not None:
-                points["x"] = np.roll(points["x"], roll_by, axis=1)
-                points["y"] = np.roll(points["y"], roll_by, axis=1)
-                values = np.roll(values, roll_by, axis=1)
+                bbox = np.where(
+                    (points["x"] >= crs_bounds[0])
+                    & (points["x"] <= crs_bounds[1])
+                    & (points["y"] >= crs_bounds[2])
+                    & (points["y"] <= crs_bounds[3]),
+                    True,
+                    False,
+                )
 
-            bbox = np.where(
-                (points["x"] >= crs_bounds[0])
-                & (points["x"] <= crs_bounds[1])
-                & (points["y"] >= crs_bounds[2])
-                & (points["y"] <= crs_bounds[3]),
-                True,
-                False,
-            )
+                kernel = np.ones((3, 3), dtype="uint8")
+                bbox = cv2.dilate(bbox.astype("uint8"), kernel).astype(bool)
 
-            kernel = np.ones((3, 3), dtype="uint8")
-            bbox = cv2.dilate(bbox.astype("uint8"), kernel).astype(bool)
+                shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape
 
-            shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape
-
-            points["x"] = points["x"][bbox].reshape(shape)
-            points["y"] = points["y"][bbox].reshape(shape)
-            values = values[bbox].reshape(shape)
+                points["x"] = points["x"][bbox].reshape(shape)
+                points["y"] = points["y"][bbox].reshape(shape)
+                values = values[bbox].reshape(shape)
 
         return values, points
 
