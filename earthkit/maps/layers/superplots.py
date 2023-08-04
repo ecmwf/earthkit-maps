@@ -277,16 +277,21 @@ class Superplot:
             method, args, kwargs = self._queue.pop(0)
             method(self, *args, **kwargs)
 
-    def legend(self, *args, location=None, **kwargs):
+    def legend(self, *args, fontsize=None, location=None, **kwargs):
+        legends = []
         for i, layer in enumerate(self.distinct_legend_layers):
             if isinstance(location, (list, tuple)):
                 loc = location[i]
             else:
                 loc = location
             if layer.style is not None:
-                layer.style.legend(
+                legend = layer.style.legend(
                     self.fig, layer, *args, ax=layer.axes, location=loc, **kwargs
                 )
+            legends.append(legend)
+        if len(legends) == 1:
+            legends = legends[0]
+        return legends
 
     @property
     def _default_title_template(self):

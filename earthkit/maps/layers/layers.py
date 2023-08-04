@@ -47,7 +47,7 @@ class Layer:
 
     def legend(self, *args, **kwargs):
         if self.style is not None:
-            self.style.legend(
+            return self.style.legend(
                 self.fig,
                 self,
                 *args,
@@ -97,7 +97,7 @@ class MultiplotLayer:
 
     def legend(self, *args, **kwargs):
         if self.style is not None:
-            self.style.legend(
+            return self.style.legend(
                 self.fig,
                 self,
                 *args,

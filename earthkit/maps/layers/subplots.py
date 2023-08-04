@@ -232,15 +232,18 @@ class Subplot:
         return self._gridlines
 
     def legend(self, *args, **kwargs):
+        legends = []
         for layer in self.distinct_legend_layers:
             if layer.style is not None:
-                layer.style.legend(
+                legend = layer.style.legend(
                     self.fig,
                     layer,
                     *args,
                     ax=layer.axes,
                     **kwargs,
                 )
+            legends.append(legend)
+        return legends
 
     @property
     def _default_title_template(self):

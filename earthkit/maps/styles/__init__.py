@@ -497,7 +497,7 @@ class Continuous(Contour):
         }
 
     def colorbar(self, *args, ticks=None, **kwargs):
-        super().colorbar(*args, ticks=ticks, **kwargs)
+        return super().colorbar(*args, ticks=ticks, **kwargs)
 
 
 class Hatched(Contour):
