@@ -19,7 +19,13 @@ class LayerFormatter(metadata.BaseFormatter):
     def __init__(self, layer):
         self.layer = layer
 
-    def format_field(self, key, format_spec):
+    def format_keys(self, format_string, kwargs):
+        keys = (i[1] for i in self.parse(format_string) if i[1] is not None)
+        for key in keys:
+            kwargs[key] = self.format_key(key)
+        return kwargs
+    
+    def format_key(self, key):
         if key in self.SUBPLOT_ATTRIBUTES:
             value = getattr(self.layer.subplot, self.SUBPLOT_ATTRIBUTES[key])
         elif key in self.STYLE_ATTRIBUTES and self.layer.style is not None:
@@ -30,8 +36,7 @@ class LayerFormatter(metadata.BaseFormatter):
                     value = metadata.format_units(value)
         else:
             value = metadata.get_metadata(self.layer, key)
-
-        return super().format_field(value, format_spec)
+        return value
 
 
 class Layer:

@@ -31,24 +31,31 @@ class SuperplotFormatter(metadata.BaseFormatter):
         self._layer_index = None
 
     def convert_field(self, value, conversion):
-        if conversion is not None and conversion.isnumeric():
-            self._layer_index = int(conversion)
-            conversion = None
-        return super().convert_field(value, conversion)
+        f = super().convert_field
+        if isinstance(value, list):
+            return [f(v, conversion) for v in value]
+        else:
+            return f(value, conversion)
 
-    def format_field(self, value, format_spec):
+    def format_key(self, key):
         values = [
-            SubplotFormatter(subplot).format_field(value, format_spec)
+            SubplotFormatter(subplot).format_key(key)
             for subplot in self.subplots
         ]
-
-        if self._layer_index is not None:
-            value = values[self._layer_index]
-            self._layer_index = None
-        else:
-            if self.unique:
-                values = list(dict.fromkeys(values))
-            value = metadata.list_to_human(values)
+        values = [item for sublist in values for item in sublist]
+        return values
+    
+    def format_field(self, value, format_spec):
+        f = super().format_field
+        if isinstance(value, list):
+            values = [f(v, format_spec) for v in value]
+            if self._layer_index is not None:
+                value = values[self._layer_index]
+                self._layer_index = None
+            else:
+                if self.unique:
+                    values = list(dict.fromkeys(values))
+                value = metadata.list_to_human(values)
         return value
 
 

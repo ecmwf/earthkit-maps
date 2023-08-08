@@ -31,11 +31,24 @@ class BaseFormatter(Formatter):
         "units": "units",
     }
 
-    def format(self, format_string, /, *args, **kwargs):
+    def convert_field(self, value, conversion):
+        if conversion == "u":
+            return str(value).upper()
+        elif conversion == "l":
+            return str(value).lower()
+        return super().convert_field(value, conversion)
+
+    def format_keys(self, format_string, kwargs):
         keys = (i[1] for i in self.parse(format_string) if i[1] is not None)
         for key in keys:
-            if key not in kwargs:
-                kwargs[key] = key
+            kwargs[key] = self.format_key(key)
+        return kwargs
+
+    def format_key(self, key):
+        return key
+
+    def format(self, format_string, /, *args, **kwargs):
+        kwargs = self.format_keys(format_string, kwargs)
         return super().format(format_string, *args, **kwargs)
 
 
