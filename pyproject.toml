@@ -1,6 +1,17 @@
 [build-system]
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 
+[project]
+dependencies = [
+  "matplotlib",
+  "cartopy",
+  "numpy",
+  "opencv-python",
+  "cf-units",
+  "xarray",
+  "pyyaml",
+]
+
 [tool.coverage.run]
 branch = true
 

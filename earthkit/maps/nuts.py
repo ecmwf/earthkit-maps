@@ -35,3 +35,4 @@ def NUTS(self, level=0, resolution="medium", year=2021):
     url = EUROSTAT_URL.format(year=year, resolution=resolution)
     name = f"nuts-level{level}-{year}-{resolution}"
     path = remote_shp("nuts", name, url)
+    return path
