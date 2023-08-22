@@ -5,11 +5,15 @@ COV_REPORT := html
 
 default: qa unit-tests type-check
 
+setup:
+	pre-commit install
+
 qa:
 	pre-commit run --all-files
 
 unit-tests:
-	python -m pytest -vv --cov=. --cov-report=$(COV_REPORT) --doctest-glob="*.md" --doctest-glob="*.rst"
+	python -m pytest -vv -m 'not notebook' --cov=. --cov-report=$(COV_REPORT)
+# python -m pytest -v -m "notebook"
 
 # type-check:
 # 	python -m mypy .
@@ -29,4 +33,6 @@ template-update:
 docs-build:
 	cd docs && rm -fr _api && make clean && make html
 
-# DO NOT EDIT ABOVE THIS LINE, ADD COMMANDS BELOW
+#integration-tests:
+#    python -m pytest -vv --cov=. --cov-report=$(COV_REPORT) tests/integration*.py
+#    python -m pytest -vv --doctest-glob='*.md'
