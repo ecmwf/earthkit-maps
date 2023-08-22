@@ -224,6 +224,7 @@ class Style:
     def disjoint_legend(
         self, fig, layer, ax, *args, location="bottom", frameon=False, **kwargs
     ):
+        kwargs.pop("format")
 
         label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
         label = layer.format_string(label)

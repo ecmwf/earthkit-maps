@@ -16,7 +16,7 @@
 from earthkit.maps import styles
 
 GEOPOTENTIAL_IN_M2_PER_S2 = styles.Contour(
-    line_colors="#33334d",
+    line_colors="red",
     linewidths=[0.5, 0.5, 0.5, 1],
     labels=True,
     level_step=800,
@@ -26,7 +26,7 @@ GEOPOTENTIAL_IN_M2_PER_S2 = styles.Contour(
 
 
 GEOPOTENTIAL_HEIGHT_IN_M = styles.Contour(
-    line_colors="#33334d",
+    line_colors="red",
     linewidths=[0.5, 0.5, 0.5, 1],
     labels=True,
     level_step=50,
@@ -37,7 +37,7 @@ GEOPOTENTIAL_HEIGHT_IN_M = styles.Contour(
 
 
 GEOPOTENTIAL_HEIGHT_IN_DAM = styles.Contour(
-    line_colors="#33334d",
+    line_colors="red",
     linewidths=[0.5, 0.5, 0.5, 1],
     labels=True,
     level_step=5,
