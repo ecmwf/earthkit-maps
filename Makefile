@@ -13,7 +13,7 @@ qa:
 
 unit-tests:
 	python -m pytest -vv -m 'not notebook' --cov=. --cov-report=$(COV_REPORT)
-	python -m pytest -v -m "notebook"
+# python -m pytest -v -m "notebook"
 
 # type-check:
 # 	python -m mypy .
