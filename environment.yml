@@ -17,3 +17,4 @@ dependencies:
 - numpy
 - xarray
 - opencv-python
+- cf-units

@@ -16,6 +16,12 @@ import cartopy.io.shapereader as shpreader
 
 from earthkit.maps import domains
 
+RESOLUTIONS = {
+    "low": "110m",
+    "medium": "50m",
+    "high": "10m",
+}
+
 
 class NaturalEarthDomain:
     """Class for building map domains and CRS based on a Natural Earth shape."""

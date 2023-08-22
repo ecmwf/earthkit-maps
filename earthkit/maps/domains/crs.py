@@ -89,7 +89,7 @@ def parse(crs):
                 crs = crs.upper().lstrip("EPSG:")
                 crs = ccrs.epsg(crs)
             else:
-                crs = crs_from_string(crs)
+                crs = from_string(crs)
 
     return crs
 
@@ -129,11 +129,11 @@ def from_dict(kwargs):
     -------
     cartopy.crs.CRS
     """
-    crs = crs_from_string(kwargs["name"]).__class__
+    crs = from_string(kwargs["name"]).__class__
     return crs(**{k: v for k, v in kwargs.items() if k != "name"})
 
 
-def crs_from_string(string):
+def from_string(string):
     """
     Convert a string name of a CRS into a cartopy CRS.
 

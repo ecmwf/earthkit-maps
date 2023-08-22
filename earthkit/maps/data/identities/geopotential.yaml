@@ -1,0 +1,13 @@
+id: geopotential
+criteria:
+- {paramId: 129}
+- {shortName: z}
+- {levelist: ["500"]}
+- {standard_name: geopotential}
+- {long_name: Geopotential}
+styles:
+  default: geopotential.GEOPOTENTIAL_IN_M2_PER_S2
+  units:
+    m2 s-2: geopotential.GEOPOTENTIAL_IN_M2_PER_S2
+    m: geopotential.GEOPOTENTIAL_HEIGHT_IN_M
+    dam: geopotential.GEOPOTENTIAL_HEIGHT_IN_DAM

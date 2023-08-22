@@ -1,0 +1,16 @@
+id: 2m-temperature
+criteria:
+- {paramId: 167, shortName: 2t}
+- {paramId: 130, shortName: t}
+- {centre: edzw, paramId: 167}
+- {centre: edzw, paramId: 500015}
+- {centre: edzw, paramId: 500016}
+- {standard_name: air_temperature}
+- {long_name: near-surface air temperature}
+- {long_name: 2 metre temperature}
+styles:
+  default: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
+  units:
+    celsius: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
+    fahrenheit: temperature.TEMPERATURE_AT_2M_IN_FAHRENHEIT
+    kelvin: temperature.TEMPERATURE_AT_2M_IN_KELVIN
