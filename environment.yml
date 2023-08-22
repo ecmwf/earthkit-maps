@@ -17,5 +17,6 @@ dependencies:
 - pyyaml
 - numpy
 - xarray
-- opencv-python
 - cf-units
+- pip:
+  - opencv-python
