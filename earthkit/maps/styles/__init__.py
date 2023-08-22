@@ -25,7 +25,6 @@ from matplotlib.patches import Rectangle
 from earthkit.maps.layers import metadata
 from earthkit.maps.schemas import schema
 
-
 DEFAULT_LEGEND_LABEL = "{variable_name} ({units})"
 
 
@@ -113,7 +112,7 @@ class Style:
         self._units_override = units_override
         self.normalize = normalize
         self.kwargs = kwargs
-        
+
         self.conversion = conversion
 
         self._categories = categories
@@ -128,7 +127,7 @@ class Style:
     def convert_units(self, values, source_units):
         if self.conversion is not None:
             values = self.conversion(values)
-        
+
         if self._units is None:
             return values
         return Unit(source_units).convert(values, self._units)
@@ -465,7 +464,6 @@ class Contour(Style):
 
 
 class Continuous(Contour):
-
     def __init__(self, *args, gradients=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.gradients = gradients
@@ -481,22 +479,22 @@ class Continuous(Contour):
         normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
         color_bins = list(zip(normalised, colors))
         cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
-        
-        gradients = self.gradients or [int(255/len(levels))]*(len(levels)-1)
+
+        gradients = self.gradients or [int(255 / len(levels))] * (len(levels) - 1)
         if not isinstance(gradients, (list, tuple)):
-            gradients = [gradients] * (len(levels)-1)
+            gradients = [gradients] * (len(levels) - 1)
 
         extrapolated_levels = []
-        for i in range(len(levels)-1):
-            bins = list(np.linspace(levels[i], levels[i+1], gradients[i]))
-            extrapolated_levels += bins[(1 if i!=0 else 0):]
+        for i in range(len(levels) - 1):
+            bins = list(np.linspace(levels[i], levels[i + 1], gradients[i]))
+            extrapolated_levels += bins[(1 if i != 0 else 0) :]
         levels = extrapolated_levels
 
         norm = None
         if self.normalize:
             norm = BoundaryNorm(levels, cmap.N)
-            
-        cmap.set_bad('#D9D9D9',1.)
+
+        cmap.set_bad("#D9D9D9", 1.0)
 
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},

@@ -15,7 +15,6 @@
 
 from earthkit.maps import Superplot
 
-
 DEFAULT_BLUEPRINT = {
     "coastlines": {},
     "borders": {},
@@ -25,9 +24,9 @@ DEFAULT_BLUEPRINT = {
 }
 
 
-def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None,  **kwargs):
+def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None, **kwargs):
     chart = Superplot(**kwargs)
-    
+
     if units is not None:
         if not isinstance(units, (list, tuple)):
             units = [units]
@@ -37,13 +36,12 @@ def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None,  **kwargs):
                 f"data fields but {len(units)} units"
             )
     else:
-        units = [None]*len(data)
-    
+        units = [None] * len(data)
+
     for item, unit in zip(data, units):
         chart.plot(item, units=unit)
-    
+
     for method, method_kwargs in blueprint.items():
         getattr(chart, method)(**method_kwargs)
-    
+
     chart.show()
-    

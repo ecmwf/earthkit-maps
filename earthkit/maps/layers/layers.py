@@ -24,7 +24,7 @@ class LayerFormatter(metadata.BaseFormatter):
         for key in keys:
             kwargs[key] = self.format_key(key)
         return kwargs
-    
+
     def format_key(self, key):
         if key in self.SUBPLOT_ATTRIBUTES:
             value = getattr(self.layer.subplot, self.SUBPLOT_ATTRIBUTES[key])

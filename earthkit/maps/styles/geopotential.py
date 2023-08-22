@@ -15,7 +15,6 @@
 
 from earthkit.maps import styles
 
-
 GEOPOTENTIAL_IN_M2_PER_S2 = styles.Contour(
     line_colors="#33334d",
     linewidths=[0.5, 0.5, 0.5, 1],
@@ -32,7 +31,7 @@ GEOPOTENTIAL_HEIGHT_IN_M = styles.Contour(
     labels=True,
     level_step=50,
     units_orverride="m",
-    conversion=lambda x: x/9.80665,
+    conversion=lambda x: x / 9.80665,
     legend_type=None,
 )
 
@@ -43,6 +42,6 @@ GEOPOTENTIAL_HEIGHT_IN_DAM = styles.Contour(
     labels=True,
     level_step=5,
     units_override="dam",
-    conversion=lambda x: (x/9.80665)*0.1,
+    conversion=lambda x: (x / 9.80665) * 0.1,
     legend_type=None,
 )

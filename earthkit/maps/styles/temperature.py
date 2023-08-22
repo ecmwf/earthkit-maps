@@ -15,7 +15,6 @@
 
 from earthkit.maps import styles
 
-
 TEMPERATURE_AT_2M_IN_CELSIUS = styles.Contour(
     colors="turbo",
     extend="both",

@@ -37,7 +37,7 @@ def suggest_style(data, units=None):
         break
     else:
         return styles.DEFAULT_STYLE
-    
+
     if units is None:
         style = config["styles"]["default"]
     else:
@@ -46,9 +46,9 @@ def suggest_style(data, units=None):
                 break
         else:
             raise ValueError(f"{config['id']} has no styles with units {units}")
-    
+
     module, style = style.split(".")
-    
+
     module = importlib.import_module(f"earthkit.maps.styles.{module}")
-    
+
     return getattr(module, style)

@@ -16,7 +16,6 @@ import itertools
 
 import earthkit.data
 import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
 
 from earthkit.maps import domains, layouts
 from earthkit.maps.layers import metadata
@@ -40,12 +39,11 @@ class SuperplotFormatter(metadata.BaseFormatter):
 
     def format_key(self, key):
         values = [
-            SubplotFormatter(subplot).format_key(key)
-            for subplot in self.subplots
+            SubplotFormatter(subplot).format_key(key) for subplot in self.subplots
         ]
         values = [item for sublist in values for item in sublist]
         return values
-    
+
     def format_field(self, value, format_spec):
         f = super().format_field
         if isinstance(value, list):

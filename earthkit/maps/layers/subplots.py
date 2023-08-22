@@ -13,13 +13,12 @@
 # limitations under the License.
 
 import cartopy.crs as ccrs
-import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
+import cartopy.io.shapereader as shpreader
 import earthkit.data
 import matplotlib.pyplot as plt
-from matplotlib.transforms import Bbox, TransformedBbox
 
-from earthkit.maps import domains, styles
+from earthkit.maps import domains
 from earthkit.maps.domains import natural_earth
 from earthkit.maps.layers import metadata
 from earthkit.maps.layers.layers import Layer, LayerFormatter
@@ -42,11 +41,10 @@ class SubplotFormatter(metadata.BaseFormatter):
 
     def format_key(self, key):
         values = [
-            LayerFormatter(layer).format_key(key)
-            for layer in self.subplot.layers
+            LayerFormatter(layer).format_key(key) for layer in self.subplot.layers
         ]
         return values
-    
+
     def format_field(self, value, format_spec):
         f = super().format_field
         if isinstance(value, list):
@@ -129,13 +127,13 @@ class Subplot:
                 source_units = data.metadata("units")
             except AttributeError:
                 source_units = None
-            
+
             if style is None:
                 style_units = kwargs.pop("units", source_units)
                 style = suggest_style(data, units=style_units)
 
             values = style.convert_units(values, source_units)
-            
+
             if "transform_first" not in kwargs:
                 kwargs["transform_first"] = self._can_transform_first(method)
 
@@ -195,7 +193,9 @@ class Subplot:
         return self.ax.coastlines(*args, resolution=resolution, **kwargs)
 
     @schema.borders.apply()
-    def borders(self, *args, resolution="auto", labels=False, label_kwargs=None, **kwargs):
+    def borders(
+        self, *args, resolution="auto", labels=False, label_kwargs=None, **kwargs
+    ):
         """Add country boundary polygons from Natural Earth.
 
         Parameters
@@ -215,29 +215,28 @@ class Subplot:
             label_kwargs = label_kwargs or dict()
             label_kwargs = {
                 **dict(
-                    ha="center", va="center",
+                    ha="center",
+                    va="center",
                     bbox=dict(
                         boxstyle="round",
-                        ec=(.2, .2, .2, 0),
-                        fc=(.3, .3, .3),
+                        ec=(0.2, 0.2, 0.2, 0),
+                        fc=(0.3, 0.3, 0.3),
                     ),
                     fontsize=8,
                     weight="bold",
-                    color=(.95, .95, .95),
+                    color=(0.95, 0.95, 0.95),
                     clip_on=True,
                     clip_box=self.ax.bbox,
                     transform=ccrs.Geodetic(),
                 ),
-                **label_kwargs
+                **label_kwargs,
             }
-            
+
             label_key = labels if isinstance(labels, str) else "ISO_A2_EH"
-            
-            resolution = "110m" if resolution=="auto" else resolution
+
+            resolution = "110m" if resolution == "auto" else resolution
             shpfilename = shpreader.natural_earth(
-                resolution=resolution,
-                category="cultural",
-                name="admin_0_countries"
+                resolution=resolution, category="cultural", name="admin_0_countries"
             )
             reader = shpreader.Reader(shpfilename)
             for record in reader.records():

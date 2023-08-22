@@ -15,7 +15,6 @@
 
 from earthkit.maps import styles
 
-
 MEAN_SEA_LEVEL_PRESSURE_IN_PA = styles.Contour(
     line_colors="#33334d",
     linewidths=[0.5, 0.5, 0.5, 1],

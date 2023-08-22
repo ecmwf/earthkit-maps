@@ -15,7 +15,6 @@
 
 from earthkit.data import remote_shp
 
-
 RESOLUTIONS = {
     "low": "60m",
     "medium": "20m",

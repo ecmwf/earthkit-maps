@@ -68,12 +68,10 @@ def load(source, data_type=None):
 
 def remote_shp(namespace, name, url):
     data_dir = os.path.join(cartopy.config["data_dir"], "shapefiles", namespace)
-    
+
     file_path = os.path.join(data_dir, f"{name}.shp")
-    
+
     if not os.path.exists(file_path):
         os.makedirs(data_dir, exist_ok=True)
-        
-    
+
     return file_path
-    

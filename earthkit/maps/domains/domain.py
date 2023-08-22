@@ -136,13 +136,14 @@ class Domain:
 
     def bbox(self, field):
         from earthkit.maps.schemas import schema
+
         source_crs = field.projection().to_cartopy_crs()
 
         points = field.to_points(flatten=False)
         values = field.to_numpy(flatten=False)
 
         if self.bounds and schema.extract_domain:
-            
+
             try:
                 crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
             except NotImplementedError:

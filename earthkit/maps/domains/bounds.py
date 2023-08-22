@@ -14,9 +14,7 @@
 
 import cartopy.crs as ccrs
 import numpy as np
-
 from earthkit.data.utils.bbox import BoundingBox
-
 
 CYCLIC_SYSTEMS = ["PlateCarree", "Mercator"]
 
@@ -86,12 +84,12 @@ def from_bbox(extents, crs, src_crs=None):
     # TODO: Implement bbox conversion for stereographic projections
     if isinstance(src_crs, ccrs.Stereographic):
         raise NotImplementedError(f"cannot convert bbox for CRS {src_crs}")
-    
+
     if src_crs is None:
         src_crs = ccrs.PlateCarree()
 
     if isinstance(extents, BoundingBox):
-         extents = [extents.west, extents.east, extents.south, extents.north]
+        extents = [extents.west, extents.east, extents.south, extents.north]
 
     ll_grid = crs.__class__.__name__ in CYCLIC_SYSTEMS
 
