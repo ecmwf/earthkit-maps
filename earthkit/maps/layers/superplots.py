@@ -16,6 +16,7 @@ import itertools
 
 import earthkit.data
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
 
 from earthkit.maps import domains, layouts
 from earthkit.maps.layers import metadata
@@ -69,7 +70,12 @@ class Superplot:
         obj._gridspec = gridspec
         return obj
 
-    def __init__(self, domain=None, crs=None, rows=None, cols=None):
+    def __init__(self, domain=None, domain_crs=None, crs=None, rows=None, cols=None):
+
+        if domain_crs is not None:
+            domain_crs = domains.crs.parse(domain_crs)
+            domain = domains.bounds.from_bbox(domain, crs, domain_crs)
+
         self._domain = domain
         self._crs = crs
 
@@ -284,6 +290,7 @@ class Superplot:
             method, args, kwargs = self._queue.pop(0)
             method(self, *args, **kwargs)
 
+    @schema.legend.apply()
     def legend(self, *args, fontsize=None, location=None, **kwargs):
         legends = []
         for i, layer in enumerate(self.distinct_legend_layers):

@@ -23,7 +23,7 @@ contour:
 point:
   marker: o
 legend:
-  location: right
+  location: bottom
   format: "%.4g"
 title:
   horizontalalignment: center

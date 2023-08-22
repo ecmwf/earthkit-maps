@@ -12,11 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
 
-ROOT_DIR = Path(__file__).parents[1]
-DATA_DIR = Path(__file__).parents[0] / "data"
-DOMAINS_DIR = DATA_DIR / "domains"
-SCHEMA_DIR = DATA_DIR / "schemas"
-STATIC_DIR = DATA_DIR / "static"
-FONTS_DIR = STATIC_DIR / "fonts"
+from earthkit.data import remote_shp
+
+
+RESOLUTIONS = {
+    "low": "60m",
+    "medium": "20m",
+    "high": "10m",
+    "very high": "03m",
+}
+
+
+EUROSTAT_URL = (
+    "https://ec.europa.eu/eurostat/cache/GISCO/distribution/v2/nuts/download/"
+    "ref-nuts-{year}-{resolution}.shp.zip"
+)
+
+
+def NUTS(self, level=0, resolution="medium", year=2021):
+    """Get NUTS regions."""
+    resolution = RESOLUTIONS[resolution]
+    url = EUROSTAT_URL.format(year=year, resolution=resolution)
+    name = f"nuts-level{level}-{year}-{resolution}"
+    path = remote_shp("nuts", name, url)

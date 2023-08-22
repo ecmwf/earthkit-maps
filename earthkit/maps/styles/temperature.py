@@ -12,11 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
 
-ROOT_DIR = Path(__file__).parents[1]
-DATA_DIR = Path(__file__).parents[0] / "data"
-DOMAINS_DIR = DATA_DIR / "domains"
-SCHEMA_DIR = DATA_DIR / "schemas"
-STATIC_DIR = DATA_DIR / "static"
-FONTS_DIR = STATIC_DIR / "fonts"
+from earthkit.maps import styles
+
+
+TEMPERATURE_AT_2M_IN_CELSIUS = styles.Contour(
+    colors="turbo",
+    extend="both",
+    levels=range(-40, 41, 2),
+    units="celsius",
+)
+
+
+TEMPERATURE_AT_2M_IN_KELVIN = styles.Contour(
+    colors="turbo",
+    extend="both",
+    levels=range(230, 311, 2),
+    units="K",
+)
+
+
+TEMPERATURE_AT_2M_IN_FAHRENHEIT = styles.Contour(
+    colors="turbo",
+    extend="both",
+    levels=range(-40, 101, 5),
+    units="fahrenheit",
+)

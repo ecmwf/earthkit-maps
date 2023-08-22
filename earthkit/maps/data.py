@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from functools import partial
 
+import cartopy
 import yaml
 
 from earthkit.maps import definitions
@@ -62,3 +64,16 @@ def load(source, data_type=None):
 
     with open(path, "r") as f:
         return reader(f)
+
+
+def remote_shp(namespace, name, url):
+    data_dir = os.path.join(cartopy.config["data_dir"], "shapefiles", namespace)
+    
+    file_path = os.path.join(data_dir, f"{name}.shp")
+    
+    if not os.path.exists(file_path):
+        os.makedirs(data_dir, exist_ok=True)
+        
+    
+    return file_path
+    

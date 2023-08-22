@@ -29,8 +29,10 @@ from earthkit.maps import styles
 from earthkit.maps.definitions import FONTS_DIR
 from earthkit.maps.layers.superplots import Superplot
 from earthkit.maps.schemas import schema
+from earthkit.maps.quickplot import quickplot
 
 __all__ = [
+    "quickplot",
     "styles",
     "Superplot",
     "schema",

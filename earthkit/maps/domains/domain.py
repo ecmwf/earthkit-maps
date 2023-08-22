@@ -21,6 +21,12 @@ from earthkit.maps import data, domains
 DOMAIN_LOOKUP = data.load("domains")
 
 
+NO_TRANSFORM_FIRST = [
+    ccrs.Stereographic,
+    ccrs.NearsidePerspective,
+]
+
+
 def force_minus_180_to_180(x):
     return (x + 180) % 360 - 180
 
@@ -98,6 +104,10 @@ class Domain:
         return self.title
 
     @property
+    def _can_transform_first(self):
+        return not any(isinstance(self.crs, crs) for crs in NO_TRANSFORM_FIRST)
+
+    @property
     def title(self):
         if self.domain_name in DOMAIN_LOOKUP["the_countries"]:
             return f"the {self.domain_name}"
@@ -165,7 +175,7 @@ class Domain:
                     False,
                 )
 
-                kernel = np.ones((3, 3), dtype="uint8")
+                kernel = np.ones((8, 8), dtype="uint8")
                 bbox = cv2.dilate(bbox.astype("uint8"), kernel).astype(bool)
 
                 shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape

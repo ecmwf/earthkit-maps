@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import cartopy.crs as ccrs
+import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
 import earthkit.data
 import matplotlib.pyplot as plt
+from matplotlib.transforms import Bbox, TransformedBbox
 
 from earthkit.maps import domains, styles
 from earthkit.maps.domains import natural_earth
 from earthkit.maps.layers import metadata
 from earthkit.maps.layers.layers import Layer, LayerFormatter
 from earthkit.maps.schemas import schema
+from earthkit.maps.styles.auto import suggest_style
 
 
 class SubplotFormatter(metadata.BaseFormatter):
@@ -121,13 +125,19 @@ class Subplot:
                 if transform is None:
                     transform = data.projection().to_cartopy_crs()
 
-            if style is None:
-                style = styles.DEFAULT_STYLE
             try:
-                units = data.metadata("units")
+                source_units = data.metadata("units")
             except AttributeError:
-                units = None
-            values = style.convert_units(values, units)
+                source_units = None
+            
+            if style is None:
+                style_units = kwargs.pop("units", source_units)
+                style = suggest_style(data, units=style_units)
+
+            values = style.convert_units(values, source_units)
+            
+            if "transform_first" not in kwargs:
+                kwargs["transform_first"] = self._can_transform_first(method)
 
             mappable = method(
                 self, x, y, values, style=style, transform=transform, **kwargs
@@ -140,17 +150,26 @@ class Subplot:
 
         return wrapper
 
-    @gridded_scalar
-    def plot(self, *args, style=None, transform_first=True, **kwargs):
-        return style.plot(self.ax, *args, transform_first=transform_first, **kwargs)
+    def _can_transform_first(self, method):
+        if self.domain._can_transform_first and method.__name__ != "pcolormesh":
+            return True
+        else:
+            return False
 
     @gridded_scalar
-    def contourf(self, *args, style=None, transform_first=True, **kwargs):
-        return style.contourf(self.ax, *args, transform_first=transform_first, **kwargs)
+    def plot(self, *args, style=None, **kwargs):
+        try:
+            return style.plot(self.ax, *args, **kwargs)
+        except NotImplementedError:
+            return style.contourf(self.ax, *args, **kwargs)
 
     @gridded_scalar
-    def contour(self, *args, style=None, transform_first=True, **kwargs):
-        return style.contour(self.ax, *args, transform_first=transform_first, **kwargs)
+    def contourf(self, *args, style=None, **kwargs):
+        return style.contourf(self.ax, *args, **kwargs)
+
+    @gridded_scalar
+    def contour(self, *args, style=None, **kwargs):
+        return style.contour(self.ax, *args, **kwargs)
 
     shaded_contour = contourf
 
@@ -176,7 +195,7 @@ class Subplot:
         return self.ax.coastlines(*args, resolution=resolution, **kwargs)
 
     @schema.borders.apply()
-    def borders(self, *args, resolution="auto", **kwargs):
+    def borders(self, *args, resolution="auto", labels=False, label_kwargs=None, **kwargs):
         """Add country boundary polygons from Natural Earth.
 
         Parameters
@@ -192,6 +211,40 @@ class Subplot:
             feature = cfeature.NaturalEarthFeature(
                 "cultural", "admin_0_countries", resolution
             )
+        if labels:
+            label_kwargs = label_kwargs or dict()
+            label_kwargs = {
+                **dict(
+                    ha="center", va="center",
+                    bbox=dict(
+                        boxstyle="round",
+                        ec=(.2, .2, .2, 0),
+                        fc=(.3, .3, .3),
+                    ),
+                    fontsize=8,
+                    weight="bold",
+                    color=(.95, .95, .95),
+                    clip_on=True,
+                    clip_box=self.ax.bbox,
+                    transform=ccrs.Geodetic(),
+                ),
+                **label_kwargs
+            }
+            
+            label_key = labels if isinstance(labels, str) else "ISO_A2_EH"
+            
+            resolution = "110m" if resolution=="auto" else resolution
+            shpfilename = shpreader.natural_earth(
+                resolution=resolution,
+                category="cultural",
+                name="admin_0_countries"
+            )
+            reader = shpreader.Reader(shpfilename)
+            for record in reader.records():
+                name = record.attributes[label_key]
+                x = record.attributes["LABEL_X"]
+                y = record.attributes["LABEL_Y"]
+                self.ax.text(x, y, name, **label_kwargs)
         return self.ax.add_feature(feature, *args, **kwargs)
 
     @schema.land.apply()
@@ -237,6 +290,7 @@ class Subplot:
         self._gridlines = self.ax.gridlines(*args, **kwargs)
         return self._gridlines
 
+    @schema.legend.apply()
     def legend(self, *args, **kwargs):
         legends = []
         for layer in self.distinct_legend_layers:

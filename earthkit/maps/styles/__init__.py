@@ -25,6 +25,7 @@ from matplotlib.patches import Rectangle
 from earthkit.maps.layers import metadata
 from earthkit.maps.schemas import schema
 
+
 DEFAULT_LEGEND_LABEL = "{variable_name} ({units})"
 
 
@@ -90,10 +91,11 @@ class Style:
         level_step=None,
         level_multiple=None,
         units=None,
+        units_override=None,
         normalize=True,
         legend_type="colorbar",
         categories=None,
-        scale_factor=None,
+        conversion=None,
         **kwargs,
     ):
         if colors == "auto":
@@ -108,21 +110,24 @@ class Style:
         self.legend_type = legend_type
 
         self._units = units
+        self._units_override = units_override
         self.normalize = normalize
         self.kwargs = kwargs
         
-        self.scale_factor = scale_factor
+        self.conversion = conversion
 
         self._categories = categories
 
     @property
     def units(self):
-        if self._units is not None:
+        if self._units_override is not None:
+            return metadata.format_units(self._units_override)
+        elif self._units is not None:
             return metadata.format_units(self._units)
 
     def convert_units(self, values, source_units):
-        if self.scale_factor is not None:
-            values *= self.scale_factor
+        if self.conversion is not None:
+            values = self.conversion(values)
         
         if self._units is None:
             return values
@@ -191,10 +196,10 @@ class Style:
         kwargs = {**self.to_pcolormesh_kwargs(values), **kwargs}
         return ax.pcolormesh(x, y, values, *args, **kwargs)
 
-    def scatter(self, ax, x, y, values, *args, **kwargs):
+    def scatter(self, ax, x, y, values, s=3, *args, **kwargs):
         kwargs.pop("transform_first", None)
         kwargs = {**self.to_scatter_kwargs(values), **kwargs}
-        return ax.scatter(x, y, c=values, s=3, *args, **kwargs)
+        return ax.scatter(x, y, c=values, s=s, *args, **kwargs)
 
     def colorbar(self, fig, layer, *args, shrink=0.8, aspect=35, **kwargs):
         label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
@@ -478,6 +483,8 @@ class Continuous(Contour):
         cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
         
         gradients = self.gradients or [int(255/len(levels))]*(len(levels)-1)
+        if not isinstance(gradients, (list, tuple)):
+            gradients = [gradients] * (len(levels)-1)
 
         extrapolated_levels = []
         for i in range(len(levels)-1):
