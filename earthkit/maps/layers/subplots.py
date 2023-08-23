@@ -129,7 +129,9 @@ class Subplot:
                 source_units = None
 
             if style is None:
-                style_units = kwargs.pop("units", source_units)
+                style_units = None
+                if not schema.force_style_units:
+                    style_units = kwargs.pop("units", source_units)
                 style = suggest_style(data, units=style_units)
 
             values = style.convert_units(values, source_units)
