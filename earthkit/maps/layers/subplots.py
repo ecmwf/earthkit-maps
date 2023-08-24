@@ -102,13 +102,12 @@ class Subplot:
     def gridded_scalar(method):
         def wrapper(self, data, x=None, y=None, transform=None, style=None, **kwargs):
             # - TEMPORARY: in the future all "fields" will be "fieldlists" -
-            if isinstance(data, earthkit.data.core.Base):
+            if isinstance(data, earthkit.data.core.Base) and hasattr(data, "__len__"):
                 try:
                     data = data[0]
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, AttributeError):
                     pass
             # --------------------------------------------------------------
-
             if x is not None and y is not None:
                 if transform is None:
                     raise ValueError(
@@ -121,7 +120,10 @@ class Subplot:
                     data = earthkit.data.from_object(data)
                 x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
-                    transform = data.projection().to_cartopy_crs()
+                    try:
+                        transform = data.projection().to_cartopy_crs()
+                    except AttributeError:
+                        transform = ccrs.PlateCarree()
 
             try:
                 source_units = data.metadata("units")
@@ -334,10 +336,11 @@ class Subplot:
 
 
 def extract_scalar(data, domain):
-    try:
-        data = data[0]
-    except (ValueError, TypeError):
-        data = data
+    if hasattr(data, "__len__"):
+        try:
+            data = data[0]
+        except (ValueError, TypeError, AttributeError):
+            data = data
 
     values, points = domain.bbox(data)
 
