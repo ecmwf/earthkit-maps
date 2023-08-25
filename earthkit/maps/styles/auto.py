@@ -28,9 +28,18 @@ def suggest_style(data, units=None):
     for fname in glob.glob(str(definitions.DATA_DIR / "identities" / "*")):
         with open(fname, "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
+
+        if hasattr(data, "metadata"):
+            search = data.metadata
+        else:
+            data_key = [key for key in data.attrs if "attrs" in key][0]
+
+            def search(x, default):
+                return data.attrs[data_key].get(x, default)
+
         for criteria in config["criteria"]:
             for key, value in criteria.items():
-                if data.metadata(key, default=None) != value:
+                if search(key, default=None) != value:
                     break
             else:
                 break

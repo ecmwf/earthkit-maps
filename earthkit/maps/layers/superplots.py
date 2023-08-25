@@ -249,6 +249,10 @@ class Superplot:
     def scatter(self, *args, **kwargs):
         pass
 
+    @expand_rows_cols
+    def polygons(self, *args, **kwargs):
+        pass
+
     @defer
     def coastlines(self, *args, **kwargs):
         return [subplot.coastlines(*args, **kwargs) for subplot in self.subplots]

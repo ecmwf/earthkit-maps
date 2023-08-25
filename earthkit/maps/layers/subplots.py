@@ -17,6 +17,7 @@ import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 import earthkit.data
 import matplotlib.pyplot as plt
+import numpy as np
 
 from earthkit.maps import domains
 from earthkit.maps.domains import natural_earth
@@ -152,6 +153,46 @@ class Subplot:
 
         return wrapper
 
+    def polygonal(method):
+        def wrapper(self, data, column=None, style=None, **kwargs):
+
+            if column is None:
+                values = data.iloc[:, -1:]
+            else:
+                values = data.loc[:, column]
+            values = [i.item() for i in values.values.flatten()]
+
+            data_key = [key for key in data.attrs if "attrs" in key][0]
+            source_units = data.attrs[data_key].get("units")
+
+            if style is None:
+                style_units = None
+                if not schema.force_style_units:
+                    style_units = kwargs.pop("units", source_units)
+                style = suggest_style(data, units=style_units)
+
+            values = style.convert_units(np.array(values), source_units)
+
+            cmap = style.to_kwargs(values)["cmap"]
+            norm = style.to_kwargs(values)["norm"]
+            for index, row in data.iterrows():
+                color = cmap(norm(values[index]))
+                geometry = row["geometry"]
+                self.ax.add_geometries(
+                    [geometry],
+                    crs=ccrs.PlateCarree(),
+                    facecolor=color,
+                    edgecolor="black",
+                )
+            mappable = self.ax.contourf([[1, 1], [1, 1]], cmap=cmap, norm=norm, alpha=0)
+
+            layer = Layer(data, mappable, self, style=style)
+            self.layers.append(layer)
+
+            return layer
+
+        return wrapper
+
     def _can_transform_first(self, method):
         if self.domain._can_transform_first and method.__name__ != "pcolormesh":
             return True
@@ -168,6 +209,10 @@ class Subplot:
     @gridded_scalar
     def contourf(self, *args, style=None, **kwargs):
         return style.contourf(self.ax, *args, **kwargs)
+
+    @polygonal
+    def polygons(self, *args, style=None, **kwargs):
+        return style.polygons(self.ax, *args, **kwargs)
 
     @gridded_scalar
     def contour(self, *args, style=None, **kwargs):
