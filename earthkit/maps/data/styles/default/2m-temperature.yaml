@@ -1,0 +1,6 @@
+styles:
+  default: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
+  units:
+    celsius: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
+    fahrenheit: temperature.TEMPERATURE_AT_2M_IN_FAHRENHEIT
+    kelvin: temperature.TEMPERATURE_AT_2M_IN_KELVIN

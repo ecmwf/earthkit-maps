@@ -1,0 +1,4 @@
+id: river-discharge
+criteria:
+- {long_name: Mean discharge in the last 6 hours}
+- {name: dis06}

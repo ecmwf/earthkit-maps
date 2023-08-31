@@ -5,6 +5,8 @@ n_levels: 8
 figsize: [10, 7.5]
 dpi: 100
 extract_domain: true
+style_library: default
+force_style_units: false
 
 # Projections and interpolation
 reference_crs: PlateCarree

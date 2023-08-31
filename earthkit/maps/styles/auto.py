@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import glob
 import importlib
+import os
 
 import yaml
 
@@ -23,12 +23,23 @@ from earthkit.maps.layers.metadata import compare_units
 
 
 def suggest_style(data, units=None):
+    from earthkit.maps import schema
+
     for fname in glob.glob(str(definitions.DATA_DIR / "identities" / "*")):
         with open(fname, "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
+
+        if hasattr(data, "metadata"):
+            search = data.metadata
+        else:
+            data_key = [key for key in data.attrs if "attrs" in key][0]
+
+            def search(x, default):
+                return data.attrs[data_key].get(x, default)
+
         for criteria in config["criteria"]:
             for key, value in criteria.items():
-                if data.metadata(key, default=None) != value:
+                if search(key, default=None) != value:
                     break
             else:
                 break
@@ -37,6 +48,15 @@ def suggest_style(data, units=None):
         break
     else:
         return styles.DEFAULT_STYLE
+
+    style_config_file = (
+        definitions.DATA_DIR / "styles" / schema.style_library / f"{config['id']}.yaml"
+    )
+    if not os.path.exists(str(style_config_file)):
+        return styles.DEFAULT_STYLE
+
+    with open(style_config_file, "r") as f:
+        config = yaml.load(f, Loader=yaml.SafeLoader)
 
     if units is None:
         style = config["styles"]["default"]
@@ -49,6 +69,11 @@ def suggest_style(data, units=None):
 
     module, style = style.split(".")
 
-    module = importlib.import_module(f"earthkit.maps.styles.{module}")
+    if schema.style_library != "default":
+        module = importlib.import_module(
+            f"earthkit.maps.styles.{schema.style_library}.{module}"
+        )
+    else:
+        module = importlib.import_module(f"earthkit.maps.styles.{module}")
 
     return getattr(module, style)

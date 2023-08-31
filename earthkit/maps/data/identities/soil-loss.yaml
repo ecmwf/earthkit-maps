@@ -1,0 +1,5 @@
+id: soil-loss
+criteria:
+- {long_name: soil-loss}
+- {standard_name: soil-loss}
+- {name: sl}

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import cartopy.crs as ccrs
 import cv2
 import numpy as np
@@ -137,7 +139,14 @@ class Domain:
     def bbox(self, field):
         from earthkit.maps.schemas import schema
 
-        source_crs = field.projection().to_cartopy_crs()
+        try:
+            source_crs = field.projection().to_cartopy_crs()
+        except AttributeError:
+            warnings.warn(
+                "failed to find projection information in data; assuming "
+                "regular equirectangular projection"
+            )
+            source_crs = ccrs.PlateCarree()
 
         points = field.to_points(flatten=False)
         values = field.to_numpy(flatten=False)

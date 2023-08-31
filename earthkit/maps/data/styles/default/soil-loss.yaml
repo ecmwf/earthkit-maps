@@ -1,0 +1,4 @@
+styles:
+  default: soil.SOIL_LOSS_IN_T_PER_HA_PER_YR
+  units:
+    t ha-1 yr-1: soil.SOIL_LOSS_IN_T_PER_HA_PER_YR

@@ -17,6 +17,7 @@ import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 import earthkit.data
 import matplotlib.pyplot as plt
+import numpy as np
 
 from earthkit.maps import domains
 from earthkit.maps.domains import natural_earth
@@ -102,13 +103,12 @@ class Subplot:
     def gridded_scalar(method):
         def wrapper(self, data, x=None, y=None, transform=None, style=None, **kwargs):
             # - TEMPORARY: in the future all "fields" will be "fieldlists" -
-            if isinstance(data, earthkit.data.core.Base):
+            if isinstance(data, earthkit.data.core.Base) and hasattr(data, "__len__"):
                 try:
                     data = data[0]
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, AttributeError):
                     pass
             # --------------------------------------------------------------
-
             if x is not None and y is not None:
                 if transform is None:
                     raise ValueError(
@@ -121,7 +121,10 @@ class Subplot:
                     data = earthkit.data.from_object(data)
                 x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
-                    transform = data.projection().to_cartopy_crs()
+                    try:
+                        transform = data.projection().to_cartopy_crs()
+                    except AttributeError:
+                        transform = ccrs.PlateCarree()
 
             try:
                 source_units = data.metadata("units")
@@ -129,7 +132,9 @@ class Subplot:
                 source_units = None
 
             if style is None:
-                style_units = kwargs.pop("units", source_units)
+                style_units = None
+                if not schema.force_style_units:
+                    style_units = kwargs.pop("units", None) or source_units
                 style = suggest_style(data, units=style_units)
 
             values = style.convert_units(values, source_units)
@@ -139,6 +144,62 @@ class Subplot:
 
             mappable = method(
                 self, x, y, values, style=style, transform=transform, **kwargs
+            )
+
+            layer = Layer(data, mappable, self, style=style)
+            self.layers.append(layer)
+
+            return layer
+
+        return wrapper
+
+    def polygonal(method):
+        def wrapper(self, data, column=None, style=None, **kwargs):
+
+            if column is None:
+                values = data.iloc[:, -1:]
+            else:
+                values = data.loc[:, column]
+            values = [i.item() for i in values.values.flatten()]
+
+            data_key = [key for key in data.attrs if "attrs" in key][0]
+            source_units = data.attrs[data_key].get("units")
+
+            if style is None:
+                style_units = None
+                if not schema.force_style_units:
+                    style_units = kwargs.pop("units", source_units)
+                style = suggest_style(data, units=style_units)
+
+            values = style.convert_units(np.array(values), source_units)
+
+            cmap = style.to_kwargs(values)["cmap"]
+            norm = style.to_kwargs(values)["norm"]
+            for index, row in data.iterrows():
+                color = cmap(norm(values[index]))
+                geometry = row["geometry"]
+                self.ax.add_geometries(
+                    [geometry],
+                    crs=ccrs.PlateCarree(),
+                    facecolor=color,
+                    edgecolor="black",
+                )
+
+            x0, y0, x1, y1 = data.total_bounds
+
+            z = [[max(values), min(values)], [max(values), min(values)]]
+            x = [x0, x1]
+            y = [y0, y1]
+
+            mappable = style.contourf(
+                self.ax,
+                x,
+                y,
+                z,
+                cmap=cmap,
+                norm=norm,
+                alpha=0,
+                transform=ccrs.PlateCarree(),
             )
 
             layer = Layer(data, mappable, self, style=style)
@@ -164,6 +225,10 @@ class Subplot:
     @gridded_scalar
     def contourf(self, *args, style=None, **kwargs):
         return style.contourf(self.ax, *args, **kwargs)
+
+    @polygonal
+    def polygons(self, *args, style=None, **kwargs):
+        return style.polygons(self.ax, *args, **kwargs)
 
     @gridded_scalar
     def contour(self, *args, style=None, **kwargs):
@@ -332,10 +397,11 @@ class Subplot:
 
 
 def extract_scalar(data, domain):
-    try:
-        data = data[0]
-    except (ValueError, TypeError):
-        data = data
+    if hasattr(data, "__len__"):
+        try:
+            data = data[0]
+        except (ValueError, TypeError, AttributeError):
+            data = data
 
     values, points = domain.bbox(data)
 

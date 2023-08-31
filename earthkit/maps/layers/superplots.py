@@ -249,6 +249,10 @@ class Superplot:
     def scatter(self, *args, **kwargs):
         pass
 
+    @expand_rows_cols
+    def polygons(self, *args, **kwargs):
+        pass
+
     @defer
     def coastlines(self, *args, **kwargs):
         return [subplot.coastlines(*args, **kwargs) for subplot in self.subplots]
@@ -321,10 +325,16 @@ class Superplot:
 
     def show(self, *args, **kwargs):
         """Display the chart."""
+        if len(self) == 0:
+            self._rows, self._cols = (1, 1)
+            self.add_subplot()
         self._release_queue()
         plt.show(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         """Save the chart."""
+        if len(self) == 0:
+            self._rows, self._cols = (1, 1)
+            self.add_subplot()
         self._release_queue()
-        plt.savefig(*args, **kwargs)
+        return plt.savefig(*args, **kwargs)
