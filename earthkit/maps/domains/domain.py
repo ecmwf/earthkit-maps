@@ -160,7 +160,7 @@ class Domain:
             else:
                 roll_by = None
 
-                if crs_bounds[0] < 0 and crs_bounds[1] > 0:
+                if crs_bounds[0] < 0:
                     if crs_bounds[0] < points["x"].min() and (points["x"] >= 180).any():
                         roll_by = roll_from_0_360_to_minus_180_180(points["x"])
                         points["x"] = force_minus_180_to_180(points["x"])
