@@ -219,6 +219,8 @@ class Style:
         )
         colorbar.ax.minorticks_off()
 
+        colorbar.solids.set(alpha=1)
+
         return colorbar
 
     def disjoint_legend(

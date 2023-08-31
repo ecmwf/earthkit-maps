@@ -134,7 +134,7 @@ class Subplot:
             if style is None:
                 style_units = None
                 if not schema.force_style_units:
-                    style_units = kwargs.pop("units", source_units)
+                    style_units = kwargs.pop("units", None) or source_units
                 style = suggest_style(data, units=style_units)
 
             values = style.convert_units(values, source_units)
@@ -184,7 +184,23 @@ class Subplot:
                     facecolor=color,
                     edgecolor="black",
                 )
-            mappable = self.ax.contourf([[1, 1], [1, 1]], cmap=cmap, norm=norm, alpha=0)
+
+            x0, y0, x1, y1 = data.total_bounds
+
+            z = [[max(values), min(values)], [max(values), min(values)]]
+            x = [x0, x1]
+            y = [y0, y1]
+
+            mappable = style.contourf(
+                self.ax,
+                x,
+                y,
+                z,
+                cmap=cmap,
+                norm=norm,
+                alpha=0,
+                transform=ccrs.PlateCarree(),
+            )
 
             layer = Layer(data, mappable, self, style=style)
             self.layers.append(layer)
