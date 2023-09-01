@@ -111,7 +111,7 @@ def format_units(units):
     except SyntaxError:
         formatted_units = units
 
-    return units
+    return formatted_units
 
 
 def get_metadata(data, attr, default=None):
