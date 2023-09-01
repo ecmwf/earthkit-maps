@@ -21,6 +21,22 @@ from cf_units import Unit
 from cf_units.tex import tex
 
 
+def format_month(data):
+    import calendar
+
+    month = data.metadata("month", default=None)
+    if month is not None:
+        month = calendar.month_name[month]
+    else:
+        time = data.datetime()
+        if "valid_time" in time:
+            time = time["valid_time"]
+        else:
+            time = time["base_time"]
+        month = f"{time:%B}"
+    return month
+
+
 class BaseFormatter(Formatter):
 
     SUBPLOT_ATTRIBUTES = {
@@ -70,6 +86,9 @@ MAGIC_KEYS = {
     },
     "short_name": {
         "preference": ["short_name", "name", "standard_name", "long_name"],
+    },
+    "month": {
+        "function": format_month,
     },
 }
 
@@ -123,7 +142,10 @@ def get_metadata(data, attr, default=None):
     else:
         candidates = [attr]
         if attr in MAGIC_KEYS:
-            candidates = MAGIC_KEYS[attr]["preference"] + candidates
+            if "function" in MAGIC_KEYS[attr]:
+                return MAGIC_KEYS[attr]["function"](data)
+            else:
+                candidates = MAGIC_KEYS[attr]["preference"] + candidates
 
         for item in candidates:
             label = data.metadata(item, default=None)
