@@ -127,7 +127,7 @@ class Subplot:
                         transform = ccrs.PlateCarree()
 
             source_units = data.metadata("units")
-            
+
             short_name = metadata.get_metadata(data, "short_name", default="")
 
             if style is None:

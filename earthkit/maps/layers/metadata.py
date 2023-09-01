@@ -70,7 +70,7 @@ MAGIC_KEYS = {
     },
     "short_name": {
         "preference": ["short_name", "name", "standard_name", "long_name"],
-    }
+    },
 }
 
 
@@ -124,10 +124,8 @@ def get_metadata(data, attr, default=None):
             if label is not None:
                 break
         else:
-            warnings.warn(
-                f'No key "{attr}" found in layer metadata.'
-            )
-    
+            warnings.warn(f'No key "{attr}" found in layer metadata.')
+
     return label or default
 
 

@@ -21,8 +21,8 @@ import numpy as np
 from cf_units import Unit
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
 from matplotlib.patches import Rectangle
-from earthkit.maps.formats.units import compare_units
 
+from earthkit.maps.formats.units import compare_units
 from earthkit.maps.layers import metadata
 from earthkit.maps.schemas import schema
 
@@ -131,12 +131,14 @@ class Style:
 
         if self._units is None:
             return values
-        
+
         # For temperature anomalies we do not want to convert values, just change the units string
-        if "anomaly" in short_name.lower() and any([
-            compare_units("celsius", source_units),
-            compare_units("K", source_units),
-        ]):
+        if "anomaly" in short_name.lower() and any(
+            [
+                compare_units("celsius", source_units),
+                compare_units("K", source_units),
+            ]
+        ):
             return values
 
         return Unit(source_units).convert(values, self._units)
