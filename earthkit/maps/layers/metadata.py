@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import itertools
+import warnings
 from string import Formatter
 
 import numpy as np
@@ -85,8 +86,6 @@ def default_label(data):
 
 
 def compare_units(unit_1, unit_2):
-    from cf_units import Unit
-
     return Unit(unit_1) == Unit(unit_2)
 
 
@@ -122,7 +121,9 @@ def get_metadata(layer, attr):
             if label is not None:
                 break
         else:
-            raise KeyError(f"No key {attr} found in metadata")
+            warnings.warn(
+                f"No key {attr} found in layer metadata."
+            )
 
     return label
 

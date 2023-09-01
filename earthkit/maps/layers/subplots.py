@@ -128,7 +128,7 @@ class Subplot:
 
             try:
                 source_units = data.metadata("units")
-            except AttributeError:
+            except (KeyError, AttributeError):
                 source_units = None
 
             if style is None:
