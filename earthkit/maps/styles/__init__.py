@@ -159,7 +159,7 @@ class Style:
 
         colors = expand_colors(self._colors, levels)
 
-        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(colors))
+        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
         norm = None
         if self.normalize:
@@ -416,7 +416,7 @@ class Contour(Style):
             colors = self._line_colors or schema.cmap
         colors = expand_colors(colors, levels)
 
-        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(colors))
+        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
         norm = None
         if self.normalize:
@@ -433,7 +433,7 @@ class Contour(Style):
         if self._colors and self._line_colors:
             colors = expand_colors(self._line_colors, kwargs["levels"])
             kwargs["cmap"] = LinearSegmentedColormap.from_list(
-                name="", colors=colors, N=len(colors)
+                name="", colors=colors, N=len(kwargs["levels"])
             )
 
         return kwargs
