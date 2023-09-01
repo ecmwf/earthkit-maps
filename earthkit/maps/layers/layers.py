@@ -31,11 +31,11 @@ class LayerFormatter(metadata.BaseFormatter):
         elif key in self.STYLE_ATTRIBUTES and self.layer.style is not None:
             value = getattr(self.layer.style, self.STYLE_ATTRIBUTES[key])
             if value is None:
-                value = metadata.get_metadata(self.layer, key)
+                value = metadata.get_metadata(self.layer.data, key)
                 if key == "units":
                     value = metadata.format_units(value)
         else:
-            value = metadata.get_metadata(self.layer, key)
+            value = metadata.get_metadata(self.layer.data, key)
         return value
 
 

@@ -126,10 +126,9 @@ class Subplot:
                     except AttributeError:
                         transform = ccrs.PlateCarree()
 
-            try:
-                source_units = data.metadata("units")
-            except AttributeError:
-                source_units = None
+            source_units = data.metadata("units")
+
+            short_name = metadata.get_metadata(data, "short_name", default="")
 
             if style is None:
                 style_units = None
@@ -137,7 +136,7 @@ class Subplot:
                     style_units = kwargs.pop("units", None) or source_units
                 style = suggest_style(data, units=style_units)
 
-            values = style.convert_units(values, source_units)
+            values = style.convert_units(values, source_units, short_name=short_name)
 
             if "transform_first" not in kwargs:
                 kwargs["transform_first"] = self._can_transform_first(method)
