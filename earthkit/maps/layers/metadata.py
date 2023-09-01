@@ -67,6 +67,9 @@ TIME_KEYS = ["base_time", "valid_time", "lead_time", "time"]
 MAGIC_KEYS = {
     "variable_name": {
         "preference": ["long_name", "standard_name", "name", "short_name"],
+    },
+    "short_name": {
+        "preference": ["short_name", "name", "standard_name", "long_name"],
     }
 }
 
@@ -105,10 +108,10 @@ def format_units(units):
     return f"${tex(units)}$"
 
 
-def get_metadata(layer, attr):
+def get_metadata(data, attr, default=None):
 
     if attr in TIME_KEYS:
-        handler = TimeHandler(layer.data.datetime())
+        handler = TimeHandler(data.datetime())
         label = getattr(handler, attr)[0]
 
     else:
@@ -117,15 +120,15 @@ def get_metadata(layer, attr):
             candidates = MAGIC_KEYS[attr]["preference"] + candidates
 
         for item in candidates:
-            label = layer.data.metadata(item, default=None)
+            label = data.metadata(item, default=None)
             if label is not None:
                 break
         else:
             warnings.warn(
-                f"No key {attr} found in layer metadata."
+                f'No key "{attr}" found in layer metadata.'
             )
-
-    return label
+    
+    return label or default
 
 
 class TimeHandler:
