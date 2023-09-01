@@ -105,7 +105,13 @@ def format_units(units):
             units = str(Unit(units))
         except ValueError:
             pass
-    return f"${tex(units)}$"
+
+    try:
+        formatted_units = f"${tex(units)}$"
+    except SyntaxError:
+        formatted_units = units
+
+    return units
 
 
 def get_metadata(data, attr, default=None):
