@@ -133,7 +133,7 @@ class Style:
             return values
         
         # For temperature anomalies we do not want to convert values, just change the units string
-        if "anomaly" in short_name and any([
+        if "anomaly" in short_name.lower() and any([
             compare_units("celsius", source_units),
             compare_units("K", source_units),
         ]):
