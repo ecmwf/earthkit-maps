@@ -126,7 +126,7 @@ class Subplot:
                     except AttributeError:
                         transform = ccrs.PlateCarree()
 
-            source_units = data.metadata("units")
+            source_units = data.metadata("units", default=None)
 
             short_name = metadata.get_metadata(data, "short_name", default="")
 
