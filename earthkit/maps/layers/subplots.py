@@ -16,6 +16,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 import earthkit.data
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -242,6 +243,58 @@ class Subplot:
     @gridded_scalar
     def scatter(self, *args, style=None, **kwargs):
         return style.scatter(self.ax, *args, **kwargs)
+
+    @schema.borders.apply()
+    def add_geometries(
+        self, shapes, *args, crs=None, labels=False, label_kwargs=None, **kwargs
+    ):
+        if isinstance(shapes, earthkit.data.core.Base):
+            shapes = shapes.to_pandas()
+
+        if crs is None:
+            crs = self.domain.crs
+            shapes = shapes.to_crs(crs.proj4_init)
+
+        if isinstance(shapes, gpd.geoseries.GeoSeries):
+            geometries = shapes
+        else:
+            geometries = shapes["geometry"]
+
+        if labels:
+            label_kwargs = label_kwargs or dict()
+            label_kwargs = {
+                **dict(
+                    ha="center",
+                    va="center",
+                    bbox=dict(
+                        boxstyle="round",
+                        ec=(0.2, 0.2, 0.2, 0),
+                        fc=(0.3, 0.3, 0.3),
+                    ),
+                    fontsize=8,
+                    weight="bold",
+                    color=(0.95, 0.95, 0.95),
+                    clip_on=True,
+                    clip_box=self.ax.bbox,
+                    transform=crs,
+                ),
+                **label_kwargs,
+            }
+
+            if isinstance(labels, str):
+                labels = shapes[labels]
+            else:
+                labels = shapes.iloc[:, 0]
+
+            for i, row in shapes.iterrows():
+                try:
+                    geometry = max(row.geometry.geoms, key=lambda a: a.area)
+                except AttributeError:
+                    geometry = row.geometry
+                x, y = geometry.representative_point().coords[:][0]
+                self.ax.text(x, y, labels[i], **label_kwargs)
+
+        return self.ax.add_geometries(geometries, *args, crs=crs, **kwargs)
 
     @schema.coastlines.apply()
     def coastlines(self, *args, resolution="auto", **kwargs):

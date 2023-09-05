@@ -64,6 +64,16 @@ class Superplot:
 
     @classmethod
     def from_gridspec(cls, gridspec, *args, **kwargs):
+        """
+        Instantiate an earthkit Superplot from a matplotlib gridspec.
+
+        Parameters
+        ----------
+        gridspec : matplotlib.gridspec.GridSpec
+            A matplotlib grid layout which determines subplot layout.
+        *args, **kwargs
+
+        """
         obj = cls(*args, **kwargs)
         obj._gridspec = gridspec
         return obj
@@ -229,6 +239,24 @@ class Superplot:
 
     @expand_rows_cols
     def plot(self, *args, **kwargs):
+        """
+        Plot some data.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The x values of the geos
+        y : numpy.ndarray, optional
+            The y values of the geos
+        transform : cartopy.crs.CCRS, optional
+        style : earthkit.maps.styles.Style, optional
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
+        """
         pass
 
     @expand_rows_cols
@@ -308,6 +336,9 @@ class Superplot:
         if len(legends) == 1:
             legends = legends[0]
         return legends
+
+    def add_geometries(self, *args, **kwargs):
+        return [subplot.add_geometries(*args, **kwargs) for subplot in self.subplots]
 
     @property
     def _default_title_template(self):
