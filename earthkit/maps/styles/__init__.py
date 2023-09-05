@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import math
 
 import earthkit.data
@@ -25,6 +26,8 @@ from matplotlib.patches import Rectangle
 from earthkit.maps.formats.units import compare_units
 from earthkit.maps.layers import metadata
 from earthkit.maps.schemas import schema
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_LEGEND_LABEL = "{variable_name} ({units})"
 
@@ -83,6 +86,29 @@ def expand_colors(colors, levels):
     return colors
 
 
+def gradients_cmap(levels, colors, gradients, normalize, **kwargs):
+
+    normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
+    color_bins = list(zip(normalised, colors))
+    cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
+
+    if not isinstance(gradients, (list, tuple)):
+        gradients = [gradients] * (len(levels) - 1)
+
+    extrapolated_levels = []
+    for i in range(len(levels) - 1):
+        bins = list(np.linspace(levels[i], levels[i + 1], gradients[i]))
+        extrapolated_levels += bins[(1 if i != 0 else 0) :]
+    levels = extrapolated_levels
+
+    norm = None
+    if normalize:
+        norm = BoundaryNorm(levels, cmap.N)
+    cmap.set_bad("#D9D9D9", 1.0)
+
+    return {**{"cmap": cmap, "norm": norm, "levels": levels}, **kwargs}
+
+
 class Style:
     def __init__(
         self,
@@ -96,6 +122,8 @@ class Style:
         legend_type="colorbar",
         categories=None,
         conversion=None,
+        ticks=None,
+        gradients=None,
         **kwargs,
     ):
         if colors == "auto":
@@ -117,6 +145,11 @@ class Style:
         self.conversion = conversion
 
         self._categories = categories
+
+        self._legend_kwargs = kwargs.get("legend_kwargs", {})
+        if ticks is not None:
+            self._legend_kwargs["ticks"] = ticks
+        self.gradients = gradients
 
     @property
     def units(self):
@@ -215,10 +248,14 @@ class Style:
         label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
         label = layer.format_string(label)
 
-        levels = self.get_levels(layer)
-        if len(np.unique(np.ediff1d(levels))) > 1:
-            kwargs["ticks"] = kwargs.get("ticks", levels)
-        kwargs["format"] = kwargs.get("format", lambda x, _: f"{x:g}")
+        kwargs = {**self._legend_kwargs, **kwargs}
+
+        if "ticks" not in kwargs:
+            levels = self.get_levels(layer)
+            if len(np.unique(np.ediff1d(levels))) > 1:
+                kwargs["ticks"] = levels
+
+        kwargs.setdefault("format", lambda x, _: f"{x:g}")
 
         colorbar = fig.colorbar(
             layer.mappable,
@@ -416,6 +453,14 @@ class Contour(Style):
             colors = self._line_colors or schema.cmap
         colors = expand_colors(colors, levels)
 
+        if self.gradients is not None:
+            self._legend_kwargs.setdefault(
+                "ticks", None
+            )  # Let matplotlib auto-generate ticks
+            return gradients_cmap(
+                levels, colors, self.gradients, self.normalize, **self.kwargs
+            )
+
         cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
         norm = None
@@ -481,6 +526,12 @@ class Continuous(Contour):
     def __init__(self, *args, gradients=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.gradients = gradients
+        logger.warning(
+            "DEPRECATION WARNING: `styles.Continuous` is deprecated, all the functionality is "
+            "now available in `styles.Contour` with the same API.\n"
+            "Please update your code to use `styles.Contour` as `styles.Continuous` will "
+            "be removed in future versions of earthkit-maps.\n"
+        )
 
     def to_kwargs(self, data):
         levels = self.levels(data)
@@ -509,7 +560,6 @@ class Continuous(Contour):
             norm = BoundaryNorm(levels, cmap.N)
 
         cmap.set_bad("#D9D9D9", 1.0)
-
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
             **self.kwargs,
