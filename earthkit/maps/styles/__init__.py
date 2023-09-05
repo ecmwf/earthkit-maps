@@ -118,6 +118,7 @@ class Style:
         legend_type="colorbar",
         categories=None,
         conversion=None,
+        ticks=None,
         **kwargs,
     ):
         if colors == "auto":
@@ -139,6 +140,11 @@ class Style:
         self.conversion = conversion
 
         self._categories = categories
+
+        self._legend_kwargs = kwargs.get("legend_kwargs", {})
+        if ticks is not None:
+            self._legend_kwargs["ticks"] = ticks
+
 
     @property
     def units(self):
@@ -236,15 +242,18 @@ class Style:
     def colorbar(self, fig, layer, *args, shrink=0.8, aspect=35, **kwargs):
         label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
         label = layer.format_string(label)
+
         kwargs = {
-            **self.kwargs.get("colorbar_kwargs", {}),
+            **self._legend_kwargs,
             **kwargs
         }
 
-        levels = self.get_levels(layer)
-        if len(np.unique(np.ediff1d(levels))) > 1:
-            kwargs["ticks"] = kwargs.get("ticks", levels)
-        kwargs["format"] = kwargs.get("format", lambda x, _: f"{x:g}")
+        if "ticks" not in kwargs:
+            levels = self.get_levels(layer)
+            if len(np.unique(np.ediff1d(levels))) > 1:
+                kwargs["ticks"] = levels
+
+        kwargs.setdefault("format", lambda x, _: f"{x:g}")
 
         colorbar = fig.colorbar(
             layer.mappable,
@@ -445,8 +454,7 @@ class Contour(Style):
         gradients = self.kwargs.get("gradients")
         if gradients is not None:
             cmap, norm, levels = gradients_cmap(levels, colors, gradients, self.normalize)
-            self.kwargs.setdefault('colorbar_kwargs', {})
-            self.kwargs['colorbar_kwargs'].setdefault('ticks', None)
+            self._legend_kwargs.setdefault('ticks', None)  # Let matplotlib auto-generate ticks
         else:
             cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
