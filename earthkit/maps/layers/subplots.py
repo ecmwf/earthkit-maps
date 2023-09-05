@@ -102,6 +102,8 @@ class Subplot:
 
     def gridded_scalar(method):
         def wrapper(self, data, x=None, y=None, transform=None, style=None, **kwargs):
+            if not isinstance(data, earthkit.data.core.Base):
+                data = earthkit.data.from_object(data)
             # - TEMPORARY: in the future all "fields" will be "fieldlists" -
             if isinstance(data, earthkit.data.core.Base) and hasattr(data, "__len__"):
                 try:
@@ -117,8 +119,6 @@ class Subplot:
                     )
                 values = data
             else:
-                if not isinstance(data, earthkit.data.core.Base):
-                    data = earthkit.data.from_object(data)
                 x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
                     try:
