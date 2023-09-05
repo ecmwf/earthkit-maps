@@ -83,6 +83,28 @@ def expand_colors(colors, levels):
     return colors
 
 
+def gradients_cmap(levels, colors, gradients, normalize, **kwargs):
+
+    normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
+    color_bins = list(zip(normalised, colors))
+    cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
+
+    if not isinstance(gradients, (list, tuple)):
+        gradients = [gradients] * (len(levels) - 1)
+
+    extrapolated_levels = []
+    for i in range(len(levels) - 1):
+        bins = list(np.linspace(levels[i], levels[i + 1], gradients[i]))
+        extrapolated_levels += bins[(1 if i != 0 else 0) :]
+    levels = extrapolated_levels
+
+    norm = None
+    if normalize:
+        norm = BoundaryNorm(levels, cmap.N)
+    cmap.set_bad("#D9D9D9", 1.0)
+
+    return cmap, norm
+
 class Style:
     def __init__(
         self,
@@ -416,11 +438,15 @@ class Contour(Style):
             colors = self._line_colors or schema.cmap
         colors = expand_colors(colors, levels)
 
-        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
+        gradients = self.kwargs.get("gradients")
+        if gradients is not None:
+            cmap, norm = gradients_cmap(levels, colors, gradients, self.normalize)
+        else:
+            cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
-        norm = None
-        if self.normalize:
-            norm = BoundaryNorm(levels, cmap.N)
+            norm = None
+            if self.normalize:
+                norm = BoundaryNorm(levels, cmap.N)
 
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
