@@ -103,7 +103,7 @@ def gradients_cmap(levels, colors, gradients, normalize, **kwargs):
         norm = BoundaryNorm(levels, cmap.N)
     cmap.set_bad("#D9D9D9", 1.0)
 
-    return cmap, norm
+    return cmap, norm, levels
 
 class Style:
     def __init__(
@@ -236,6 +236,10 @@ class Style:
     def colorbar(self, fig, layer, *args, shrink=0.8, aspect=35, **kwargs):
         label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
         label = layer.format_string(label)
+        kwargs = {
+            **self.kwargs.get("colorbar_kwargs", {}),
+            **kwargs
+        }
 
         levels = self.get_levels(layer)
         if len(np.unique(np.ediff1d(levels))) > 1:
@@ -440,7 +444,9 @@ class Contour(Style):
 
         gradients = self.kwargs.get("gradients")
         if gradients is not None:
-            cmap, norm = gradients_cmap(levels, colors, gradients, self.normalize)
+            cmap, norm, levels = gradients_cmap(levels, colors, gradients, self.normalize)
+            self.kwargs.setdefault('colorbar_kwargs', {})
+            self.kwargs['colorbar_kwargs'].setdefault('ticks', None)
         else:
             cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
@@ -535,7 +541,7 @@ class Continuous(Contour):
             norm = BoundaryNorm(levels, cmap.N)
 
         cmap.set_bad("#D9D9D9", 1.0)
-
+        print(cmap, norm)
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
             **self.kwargs,
