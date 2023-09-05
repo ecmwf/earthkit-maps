@@ -528,9 +528,9 @@ class Continuous(Contour):
         super().__init__(*args, **kwargs)
         self.gradients = gradients
         logger.warning(
-            "DEPRECATION WARNING: styles.Continuous is deprecated, all the functionality is "
-            "now available in styles.Contour with the same API.\n"
-            "Please update your code to use styles.Contour as styles. Continuous will "
+            "DEPRECATION WARNING: `styles.Continuous` is deprecated, all the functionality is "
+            "now available in `styles.Contour` with the same API.\n"
+            "Please update your code to use `styles.Contour` as `styles.Continuous` will "
             "be removed in future versions of earthkit-maps.\n"
         )
 
