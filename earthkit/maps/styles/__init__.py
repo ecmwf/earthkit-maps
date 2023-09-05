@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import math
 
 import earthkit.data
@@ -25,6 +26,8 @@ from matplotlib.patches import Rectangle
 from earthkit.maps.formats.units import compare_units
 from earthkit.maps.layers import metadata
 from earthkit.maps.schemas import schema
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_LEGEND_LABEL = "{variable_name} ({units})"
 
@@ -103,8 +106,10 @@ def gradients_cmap(levels, colors, gradients, normalize, **kwargs):
         norm = BoundaryNorm(levels, cmap.N)
     cmap.set_bad("#D9D9D9", 1.0)
 
-    return cmap, norm, levels
-
+    return {
+        **{"cmap": cmap, "norm": norm, "levels": levels},
+        **kwargs
+    }
 class Style:
     def __init__(
         self,
@@ -119,6 +124,7 @@ class Style:
         categories=None,
         conversion=None,
         ticks=None,
+        gradients=None,
         **kwargs,
     ):
         if colors == "auto":
@@ -144,6 +150,7 @@ class Style:
         self._legend_kwargs = kwargs.get("legend_kwargs", {})
         if ticks is not None:
             self._legend_kwargs["ticks"] = ticks
+        self.gradients = gradients
 
 
     @property
@@ -451,16 +458,15 @@ class Contour(Style):
             colors = self._line_colors or schema.cmap
         colors = expand_colors(colors, levels)
 
-        gradients = self.kwargs.get("gradients")
-        if gradients is not None:
-            cmap, norm, levels = gradients_cmap(levels, colors, gradients, self.normalize)
+        if self.gradients is not None:
             self._legend_kwargs.setdefault('ticks', None)  # Let matplotlib auto-generate ticks
-        else:
-            cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
+            return gradients_cmap(levels, colors, self.gradients, self.normalize, **self.kwargs)
+        
+        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
 
-            norm = None
-            if self.normalize:
-                norm = BoundaryNorm(levels, cmap.N)
+        norm = None
+        if self.normalize:
+            norm = BoundaryNorm(levels, cmap.N)
 
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
@@ -521,6 +527,13 @@ class Continuous(Contour):
     def __init__(self, *args, gradients=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.gradients = gradients
+        logger.warning(
+            "DEPRECATION WARNING: styles.Continuous is deprecated, all the functionality is "
+            "now available in styles.Contour with the same API.\n"
+            "Please update your code to use styles.Contour as styles. Continuous will "
+            "be removed in future versions of earthkit-maps.\n"
+        )
+
 
     def to_kwargs(self, data):
         levels = self.levels(data)
@@ -549,7 +562,6 @@ class Continuous(Contour):
             norm = BoundaryNorm(levels, cmap.N)
 
         cmap.set_bad("#D9D9D9", 1.0)
-        print(cmap, norm)
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
             **self.kwargs,
