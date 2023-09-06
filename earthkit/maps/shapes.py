@@ -13,26 +13,14 @@
 # limitations under the License.
 
 
-from earthkit.data import remote_shp
-
-RESOLUTIONS = {
-    "low": "60m",
-    "medium": "20m",
-    "high": "10m",
-    "very high": "03m",
-}
+import earthkit.data
 
 
-EUROSTAT_URL = (
-    "https://ec.europa.eu/eurostat/cache/GISCO/distribution/v2/nuts/download/"
-    "ref-nuts-{year}-{resolution}.shp.zip"
-)
+def NUTS(level=0, year=2021, resolution="60M"):
+    from earthkit.data.testing import earthkit_remote_test_data_file
 
-
-def NUTS(self, level=0, resolution="medium", year=2021):
-    """Get NUTS regions."""
-    resolution = RESOLUTIONS[resolution]
-    url = EUROSTAT_URL.format(year=year, resolution=resolution)
-    name = f"nuts-level{level}-{year}-{resolution}"
-    path = remote_shp("nuts", name, url)
-    return path
+    remote_nuts_url = earthkit_remote_test_data_file(
+        "test-data",
+        f"NUTS_RG_{resolution}_{year}_4326_LEVL_{level}.geojson",
+    )
+    return earthkit.data.from_source("url", remote_nuts_url)
