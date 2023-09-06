@@ -8,3 +8,4 @@ criteria:
 - {standard_name: air_temperature}
 - {long_name: near-surface air temperature}
 - {long_name: 2 metre temperature}
+- {long_name: Mean 2 metre temperature}

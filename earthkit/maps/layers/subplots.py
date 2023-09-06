@@ -19,6 +19,7 @@ import earthkit.data
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from earthkit.maps import domains
 from earthkit.maps.domains import natural_earth
@@ -157,13 +158,12 @@ class Subplot:
         def wrapper(self, data, column=None, style=None, **kwargs):
 
             if column is None:
-                values = data.iloc[:, -1:]
-            else:
-                values = data.loc[:, column]
+                return self.add_geometries(data, **kwargs)
+
+            values = data.loc[:, column]
             values = [i.item() for i in values.values.flatten()]
 
-            data_key = [key for key in data.attrs if "attrs" in key][0]
-            source_units = data.attrs[data_key].get("units")
+            source_units = data.attrs["reduce_attrs"][column].get("units")
 
             if style is None:
                 style_units = None
@@ -175,7 +175,7 @@ class Subplot:
 
             cmap = style.to_kwargs(values)["cmap"]
             norm = style.to_kwargs(values)["norm"]
-            for index, row in data.iterrows():
+            for index, (_, row) in enumerate(data.iterrows()):
                 color = cmap(norm(values[index]))
                 geometry = row["geometry"]
                 self.ax.add_geometries(
@@ -215,8 +215,16 @@ class Subplot:
         else:
             return False
 
+    def plot(self, *args, **kwargs):
+        data = args[0]
+
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            return self.polygons(*args, **kwargs)
+        else:
+            return self._plot_gridded_scalar(*args, **kwargs)
+
     @gridded_scalar
-    def plot(self, *args, style=None, **kwargs):
+    def _plot_gridded_scalar(self, *args, style=None, **kwargs):
         try:
             return style.plot(self.ax, *args, **kwargs)
         except NotImplementedError:

@@ -140,6 +140,18 @@ def get_metadata(data, attr, default=None):
         label = getattr(handler, attr)[0]
 
     else:
+        if hasattr(data, "metadata"):
+            search = data.metadata
+        else:
+            data_key = [
+                key
+                for key in data.attrs["reduce_attrs"]
+                if "reduce_dims" in data.attrs["reduce_attrs"][key]
+            ][0]
+
+            def search(x, default):
+                return data.attrs["reduce_attrs"][data_key].get(x, default)
+
         candidates = [attr]
         if attr in MAGIC_KEYS:
             if "function" in MAGIC_KEYS[attr]:
@@ -148,7 +160,7 @@ def get_metadata(data, attr, default=None):
                 candidates = MAGIC_KEYS[attr]["preference"] + candidates
 
         for item in candidates:
-            label = data.metadata(item, default=None)
+            label = search(item, default=None)
             if label is not None:
                 break
         else:

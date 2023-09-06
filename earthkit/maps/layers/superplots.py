@@ -16,6 +16,7 @@ import itertools
 
 import earthkit.data
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from earthkit.maps import domains, layouts
 from earthkit.maps.layers import metadata
@@ -237,8 +238,16 @@ class Superplot:
 
         return wrapper
 
-    @expand_rows_cols
     def plot(self, *args, **kwargs):
+        data = args[0]
+
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            return self.polygons(*args, **kwargs)
+        else:
+            return self._plot_gridded_scalar(*args, **kwargs)
+
+    @expand_rows_cols
+    def _plot_gridded_scalar(self, *args, **kwargs):
         """
         Plot some data.
 
@@ -277,9 +286,11 @@ class Superplot:
     def scatter(self, *args, **kwargs):
         pass
 
-    @expand_rows_cols
     def polygons(self, *args, **kwargs):
-        pass
+        if not self.subplots:
+            self._rows, self._cols = (1, 1)
+            self.add_subplot()
+        [subplot.polygons(*args, **kwargs) for subplot in self.subplots]
 
     @defer
     def coastlines(self, *args, **kwargs):
@@ -337,6 +348,7 @@ class Superplot:
             legends = legends[0]
         return legends
 
+    @defer
     def add_geometries(self, *args, **kwargs):
         return [subplot.add_geometries(*args, **kwargs) for subplot in self.subplots]
 

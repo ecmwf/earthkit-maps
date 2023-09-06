@@ -25,7 +25,7 @@ import os
 
 from matplotlib import font_manager, rcParams
 
-from earthkit.maps import styles
+from earthkit.maps import shapes, styles
 from earthkit.maps.definitions import FONTS_DIR
 from earthkit.maps.layers.superplots import Superplot
 from earthkit.maps.quickplot import quickplot
@@ -33,6 +33,7 @@ from earthkit.maps.schemas import schema
 
 __all__ = [
     "quickplot",
+    "shapes",
     "styles",
     "Superplot",
     "schema",
