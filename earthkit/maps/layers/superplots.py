@@ -285,7 +285,7 @@ class Superplot:
     @expand_rows_cols
     def scatter(self, *args, **kwargs):
         pass
-
+    
     def polygons(self, *args, **kwargs):
         if not self.subplots:
             self._rows, self._cols = (1, 1)

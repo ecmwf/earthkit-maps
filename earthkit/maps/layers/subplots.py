@@ -175,7 +175,6 @@ class Subplot:
 
             cmap = style.to_kwargs(values)["cmap"]
             norm = style.to_kwargs(values)["norm"]
-
             for index, (_, row) in enumerate(data.iterrows()):
                 color = cmap(norm(values[index]))
                 geometry = row["geometry"]
