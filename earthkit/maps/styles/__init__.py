@@ -104,7 +104,6 @@ def gradients_cmap(levels, colors, gradients, normalize, **kwargs):
     norm = None
     if normalize:
         norm = BoundaryNorm(levels, cmap.N)
-    cmap.set_bad("#D9D9D9", 1.0)
 
     return {**{"cmap": cmap, "norm": norm, "levels": levels}, **kwargs}
 
@@ -124,6 +123,7 @@ class Style:
         conversion=None,
         ticks=None,
         gradients=None,
+        missing=None,
         **kwargs,
     ):
         if colors == "auto":
@@ -145,6 +145,8 @@ class Style:
         self.conversion = conversion
 
         self._categories = categories
+
+        self._missing = missing
 
         self._legend_kwargs = kwargs.get("legend_kwargs", {})
         if ticks is not None:
@@ -193,6 +195,9 @@ class Style:
         colors = expand_colors(self._colors, levels)
 
         cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
+
+        if self._missing is not None:
+            cmap.set_bad(**self._missing)
 
         norm = None
         if self.normalize:
