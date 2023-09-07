@@ -121,7 +121,11 @@ class Subplot:
                     )
                 values = data
             else:
-                x, y, values = extract_scalar(data, self.domain)
+                x, y, values = extract_scalar(
+                    data,
+                    self.domain,
+                    force_source_longitude=method.__name__ == "pcolormesh",
+                )
                 if transform is None:
                     try:
                         transform = data.projection().to_cartopy_crs()
@@ -175,6 +179,7 @@ class Subplot:
 
             cmap = style.to_kwargs(values)["cmap"]
             norm = style.to_kwargs(values)["norm"]
+
             for index, (_, row) in enumerate(data.iterrows()):
                 color = cmap(norm(values[index]))
                 geometry = row["geometry"]
@@ -456,14 +461,14 @@ class Subplot:
         return SubplotFormatter(self, unique=unique).format(string)
 
 
-def extract_scalar(data, domain):
+def extract_scalar(data, domain, force_source_longitude=False):
     if hasattr(data, "__len__"):
         try:
             data = data[0]
         except (ValueError, TypeError, AttributeError):
             data = data
 
-    values, points = domain.bbox(data)
+    values, points = domain.bbox(data, force_source_longitude=force_source_longitude)
 
     y = points["y"]
     x = points["x"]

@@ -134,7 +134,7 @@ class Domain:
     def latlon_bounds(self):
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
 
-    def bbox(self, field):
+    def bbox(self, field, force_source_longitude=False):
         from earthkit.maps.schemas import schema
 
         try:
@@ -154,7 +154,9 @@ class Domain:
             else:
                 roll_by = None
 
-                if crs_bounds[0] < 0:
+                if force_source_longitude:
+                    pass
+                elif crs_bounds[0] < 0:
                     if crs_bounds[0] < points["x"].min() and (points["x"] >= 180).any():
                         roll_by = roll_from_0_360_to_minus_180_180(points["x"])
                         points["x"] = force_minus_180_to_180(points["x"])
