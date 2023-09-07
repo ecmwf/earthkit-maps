@@ -73,7 +73,7 @@ class Layer:
 
     @property
     def _default_title_template(self):
-        if self.data.metadata("type", default=None) == "an":
+        if self.data.metadata("type", default="an") == "an":
             template = metadata.DEFAULT_ANALYSIS_TITLE
         else:
             template = metadata.DEFAULT_FORECAST_TITLE
