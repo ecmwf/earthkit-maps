@@ -211,7 +211,7 @@ class Superplot:
 
     def expand_rows_cols(method):
         def wrapper(self, data, *args, **kwargs):
-            if not isinstance(data, earthkit.data.core.Base):
+            if not isinstance(data, (earthkit.data.core.Base, list)):
                 data = earthkit.data.from_object(data)
             if not hasattr(data, "__len__"):
                 data = [data]
