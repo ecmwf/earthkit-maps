@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings
-
 import cartopy.crs as ccrs
 import cv2
 import numpy as np
@@ -24,8 +22,8 @@ DOMAIN_LOOKUP = data.load("domains")
 
 
 NO_TRANSFORM_FIRST = [
-    ccrs.Stereographic,
-    ccrs.NearsidePerspective,
+    # ccrs.Stereographic,
+    # ccrs.NearsidePerspective,
 ]
 
 
@@ -142,10 +140,6 @@ class Domain:
         try:
             source_crs = field.projection().to_cartopy_crs()
         except AttributeError:
-            warnings.warn(
-                "failed to find projection information in data; assuming "
-                "regular equirectangular projection"
-            )
             source_crs = ccrs.PlateCarree()
 
         points = field.to_points(flatten=False)
@@ -159,13 +153,18 @@ class Domain:
                 pass
             else:
                 roll_by = None
-                if crs_bounds[0] < 0 and crs_bounds[1] > 0:
-                    if crs_bounds[0] < points["x"].min():
+
+                if crs_bounds[0] < 0:
+                    if crs_bounds[0] < points["x"].min() and (points["x"] >= 180).any():
                         roll_by = roll_from_0_360_to_minus_180_180(points["x"])
                         points["x"] = force_minus_180_to_180(points["x"])
                         for i in range(2):
                             crs_bounds[i] = force_minus_180_to_180(crs_bounds[i])
-                elif crs_bounds[0] < 180 and crs_bounds[1] > 180:
+                elif (
+                    crs_bounds[0] < 180
+                    and crs_bounds[1] > 180
+                    and (points["x"] >= 0).any()
+                ):
                     if crs_bounds[1] > points["x"].max():
                         roll_by = roll_from_minus_180_180_to_0_360(points["x"])
                         points["x"] = force_0_to_360(points["x"])

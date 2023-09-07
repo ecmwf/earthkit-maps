@@ -16,6 +16,7 @@ import itertools
 
 import earthkit.data
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from earthkit.maps import domains, layouts
 from earthkit.maps.layers import metadata
@@ -64,6 +65,16 @@ class Superplot:
 
     @classmethod
     def from_gridspec(cls, gridspec, *args, **kwargs):
+        """
+        Instantiate an earthkit Superplot from a matplotlib gridspec.
+
+        Parameters
+        ----------
+        gridspec : matplotlib.gridspec.GridSpec
+            A matplotlib grid layout which determines subplot layout.
+        *args, **kwargs
+
+        """
         obj = cls(*args, **kwargs)
         obj._gridspec = gridspec
         return obj
@@ -200,9 +211,9 @@ class Superplot:
 
     def expand_rows_cols(method):
         def wrapper(self, data, *args, **kwargs):
-            if not hasattr(data, "__len__") or not isinstance(
-                data, earthkit.data.core.Base
-            ):
+            if not isinstance(data, (earthkit.data.core.Base, list)):
+                data = earthkit.data.from_object(data)
+            if not hasattr(data, "__len__"):
                 data = [data]
 
             if not self.subplots:
@@ -227,8 +238,34 @@ class Superplot:
 
         return wrapper
 
-    @expand_rows_cols
     def plot(self, *args, **kwargs):
+        data = args[0]
+
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            return self.polygons(*args, **kwargs)
+        else:
+            return self._plot_gridded_scalar(*args, **kwargs)
+
+    @expand_rows_cols
+    def _plot_gridded_scalar(self, *args, **kwargs):
+        """
+        Plot some data.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The x values of the geos
+        y : numpy.ndarray, optional
+            The y values of the geos
+        transform : cartopy.crs.CCRS, optional
+        style : earthkit.maps.styles.Style, optional
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
+        """
         pass
 
     @expand_rows_cols
@@ -249,9 +286,11 @@ class Superplot:
     def scatter(self, *args, **kwargs):
         pass
 
-    @expand_rows_cols
     def polygons(self, *args, **kwargs):
-        pass
+        if not self.subplots:
+            self._rows, self._cols = (1, 1)
+            self.add_subplot()
+        [subplot.polygons(*args, **kwargs) for subplot in self.subplots]
 
     @defer
     def coastlines(self, *args, **kwargs):
@@ -309,6 +348,10 @@ class Superplot:
             legends = legends[0]
         return legends
 
+    @defer
+    def add_geometries(self, *args, **kwargs):
+        return [subplot.add_geometries(*args, **kwargs) for subplot in self.subplots]
+
     @property
     def _default_title_template(self):
         return self.subplots[0]._default_title_template
@@ -321,6 +364,13 @@ class Superplot:
         return self.fig.suptitle(label, wrap=wrap, **kwargs)
 
     def subplot_titles(self, *args, **kwargs):
+        if args and isinstance(args[0], (list, tuple)):
+            items = args[0]
+            args = args[1:]
+            return [
+                subplot.title(item, *args, **kwargs)
+                for item, subplot in zip(items, self.subplots)
+            ]
         return [subplot.title(*args, **kwargs) for subplot in self.subplots]
 
     def show(self, *args, **kwargs):

@@ -16,8 +16,10 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
 import earthkit.data
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from earthkit.maps import domains
 from earthkit.maps.domains import natural_earth
@@ -102,6 +104,8 @@ class Subplot:
 
     def gridded_scalar(method):
         def wrapper(self, data, x=None, y=None, transform=None, style=None, **kwargs):
+            if not isinstance(data, earthkit.data.core.Base):
+                data = earthkit.data.from_object(data)
             # - TEMPORARY: in the future all "fields" will be "fieldlists" -
             if isinstance(data, earthkit.data.core.Base) and hasattr(data, "__len__"):
                 try:
@@ -117,8 +121,6 @@ class Subplot:
                     )
                 values = data
             else:
-                if not isinstance(data, earthkit.data.core.Base):
-                    data = earthkit.data.from_object(data)
                 x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
                     try:
@@ -126,10 +128,9 @@ class Subplot:
                     except AttributeError:
                         transform = ccrs.PlateCarree()
 
-            try:
-                source_units = data.metadata("units")
-            except AttributeError:
-                source_units = None
+            source_units = data.metadata("units", default=None)
+
+            short_name = metadata.get_metadata(data, "short_name", default="")
 
             if style is None:
                 style_units = None
@@ -137,7 +138,7 @@ class Subplot:
                     style_units = kwargs.pop("units", None) or source_units
                 style = suggest_style(data, units=style_units)
 
-            values = style.convert_units(values, source_units)
+            values = style.convert_units(values, source_units, short_name=short_name)
 
             if "transform_first" not in kwargs:
                 kwargs["transform_first"] = self._can_transform_first(method)
@@ -157,13 +158,12 @@ class Subplot:
         def wrapper(self, data, column=None, style=None, **kwargs):
 
             if column is None:
-                values = data.iloc[:, -1:]
-            else:
-                values = data.loc[:, column]
+                return self.add_geometries(data, **kwargs)
+
+            values = data.loc[:, column]
             values = [i.item() for i in values.values.flatten()]
 
-            data_key = [key for key in data.attrs if "attrs" in key][0]
-            source_units = data.attrs[data_key].get("units")
+            source_units = data.attrs["reduce_attrs"][column].get("units")
 
             if style is None:
                 style_units = None
@@ -175,7 +175,7 @@ class Subplot:
 
             cmap = style.to_kwargs(values)["cmap"]
             norm = style.to_kwargs(values)["norm"]
-            for index, row in data.iterrows():
+            for index, (_, row) in enumerate(data.iterrows()):
                 color = cmap(norm(values[index]))
                 geometry = row["geometry"]
                 self.ax.add_geometries(
@@ -215,8 +215,16 @@ class Subplot:
         else:
             return False
 
+    def plot(self, *args, **kwargs):
+        data = args[0]
+
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            return self.polygons(*args, **kwargs)
+        else:
+            return self._plot_gridded_scalar(*args, **kwargs)
+
     @gridded_scalar
-    def plot(self, *args, style=None, **kwargs):
+    def _plot_gridded_scalar(self, *args, style=None, **kwargs):
         try:
             return style.plot(self.ax, *args, **kwargs)
         except NotImplementedError:
@@ -243,6 +251,58 @@ class Subplot:
     @gridded_scalar
     def scatter(self, *args, style=None, **kwargs):
         return style.scatter(self.ax, *args, **kwargs)
+
+    @schema.borders.apply()
+    def add_geometries(
+        self, shapes, *args, crs=None, labels=False, label_kwargs=None, **kwargs
+    ):
+        if isinstance(shapes, earthkit.data.core.Base):
+            shapes = shapes.to_pandas()
+
+        if crs is None:
+            crs = self.domain.crs
+            shapes = shapes.to_crs(crs.proj4_init)
+
+        if isinstance(shapes, gpd.geoseries.GeoSeries):
+            geometries = shapes
+        else:
+            geometries = shapes["geometry"]
+
+        if labels:
+            label_kwargs = label_kwargs or dict()
+            label_kwargs = {
+                **dict(
+                    ha="center",
+                    va="center",
+                    bbox=dict(
+                        boxstyle="round",
+                        ec=(0.2, 0.2, 0.2, 0),
+                        fc=(0.3, 0.3, 0.3),
+                    ),
+                    fontsize=8,
+                    weight="bold",
+                    color=(0.95, 0.95, 0.95),
+                    clip_on=True,
+                    clip_box=self.ax.bbox,
+                    transform=crs,
+                ),
+                **label_kwargs,
+            }
+
+            if isinstance(labels, str):
+                labels = shapes[labels]
+            else:
+                labels = shapes.iloc[:, 0]
+
+            for i, row in shapes.iterrows():
+                try:
+                    geometry = max(row.geometry.geoms, key=lambda a: a.area)
+                except AttributeError:
+                    geometry = row.geometry
+                x, y = geometry.representative_point().coords[:][0]
+                self.ax.text(x, y, labels[i], **label_kwargs)
+
+        return self.ax.add_geometries(geometries, *args, crs=crs, **kwargs)
 
     @schema.coastlines.apply()
     def coastlines(self, *args, resolution="auto", **kwargs):

@@ -32,10 +32,14 @@ def suggest_style(data, units=None):
         if hasattr(data, "metadata"):
             search = data.metadata
         else:
-            data_key = [key for key in data.attrs if "attrs" in key][0]
+            data_key = [
+                key
+                for key in data.attrs["reduce_attrs"]
+                if "reduce_dims" in data.attrs["reduce_attrs"][key]
+            ][0]
 
             def search(x, default):
-                return data.attrs[data_key].get(x, default)
+                return data.attrs["reduce_attrs"][data_key].get(x, default)
 
         for criteria in config["criteria"]:
             for key, value in criteria.items():

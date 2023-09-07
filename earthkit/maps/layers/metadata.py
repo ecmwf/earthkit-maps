@@ -13,11 +13,28 @@
 # limitations under the License.
 
 import itertools
+import warnings
 from string import Formatter
 
 import numpy as np
 from cf_units import Unit
 from cf_units.tex import tex
+
+
+def format_month(data):
+    import calendar
+
+    month = data.metadata("month", default=None)
+    if month is not None:
+        month = calendar.month_name[month]
+    else:
+        time = data.datetime()
+        if "valid_time" in time:
+            time = time["valid_time"]
+        else:
+            time = time["base_time"]
+        month = f"{time:%B}"
+    return month
 
 
 class BaseFormatter(Formatter):
@@ -66,7 +83,13 @@ TIME_KEYS = ["base_time", "valid_time", "lead_time", "time"]
 MAGIC_KEYS = {
     "variable_name": {
         "preference": ["long_name", "standard_name", "name", "short_name"],
-    }
+    },
+    "short_name": {
+        "preference": ["short_name", "name", "standard_name", "long_name"],
+    },
+    "month": {
+        "function": format_month,
+    },
 }
 
 
@@ -85,8 +108,6 @@ def default_label(data):
 
 
 def compare_units(unit_1, unit_2):
-    from cf_units import Unit
-
     return Unit(unit_1) == Unit(unit_2)
 
 
@@ -103,28 +124,49 @@ def format_units(units):
             units = str(Unit(units))
         except ValueError:
             pass
-    return f"${tex(units)}$"
+
+    try:
+        formatted_units = f"${tex(units)}$"
+    except SyntaxError:
+        formatted_units = units
+
+    return formatted_units
 
 
-def get_metadata(layer, attr):
+def get_metadata(data, attr, default=None):
 
     if attr in TIME_KEYS:
-        handler = TimeHandler(layer.data.datetime())
+        handler = TimeHandler(data.datetime())
         label = getattr(handler, attr)[0]
 
     else:
+        if hasattr(data, "metadata"):
+            search = data.metadata
+        else:
+            data_key = [
+                key
+                for key in data.attrs["reduce_attrs"]
+                if "reduce_dims" in data.attrs["reduce_attrs"][key]
+            ][0]
+
+            def search(x, default):
+                return data.attrs["reduce_attrs"][data_key].get(x, default)
+
         candidates = [attr]
         if attr in MAGIC_KEYS:
-            candidates = MAGIC_KEYS[attr]["preference"] + candidates
+            if "function" in MAGIC_KEYS[attr]:
+                return MAGIC_KEYS[attr]["function"](data)
+            else:
+                candidates = MAGIC_KEYS[attr]["preference"] + candidates
 
         for item in candidates:
-            label = layer.data.metadata(item, default=None)
+            label = search(item, default=None)
             if label is not None:
                 break
         else:
-            raise KeyError(f"No key {attr} found in metadata")
+            warnings.warn(f'No key "{attr}" found in layer metadata.')
 
-    return label
+    return label or default
 
 
 class TimeHandler:
