@@ -364,6 +364,13 @@ class Superplot:
         return self.fig.suptitle(label, wrap=wrap, **kwargs)
 
     def subplot_titles(self, *args, **kwargs):
+        if args and isinstance(args[0], (list, tuple)):
+            items = args[0]
+            args = args[1:]
+            return [
+                subplot.title(item, *args, **kwargs)
+                for item, subplot in zip(items, self.subplots)
+            ]
         return [subplot.title(*args, **kwargs) for subplot in self.subplots]
 
     def show(self, *args, **kwargs):
