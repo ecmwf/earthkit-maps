@@ -22,7 +22,7 @@ DOMAIN_LOOKUP = data.load("domains")
 
 
 NO_TRANSFORM_FIRST = [
-    ccrs.Stereographic,
+    # ccrs.Stereographic,
     # ccrs.NearsidePerspective,
 ]
 
