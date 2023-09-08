@@ -454,8 +454,13 @@ class Subplot:
         plt.sca(self.ax)
         return plt.title(label, wrap=wrap, **kwargs)
 
-    def format_string(self, string, unique=True):
-        return SubplotFormatter(self, unique=unique).format(string)
+    def format_string(self, string, unique=True, grouped=True):
+        if not grouped:
+            return metadata.list_to_human(
+                [LayerFormatter(layer).format(string) for layer in self.layers]
+            )
+        else:
+            return SubplotFormatter(self, unique=unique).format(string)
 
 
 def extract_scalar(data, domain):
