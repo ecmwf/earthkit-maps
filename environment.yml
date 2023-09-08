@@ -21,5 +21,4 @@ dependencies:
 - numpy
 - xarray
 - cf-units
-- pip:
-  - opencv-python
+- scipy

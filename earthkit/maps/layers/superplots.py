@@ -34,6 +34,8 @@ class SuperplotFormatter(metadata.BaseFormatter):
     def convert_field(self, value, conversion):
         f = super().convert_field
         if isinstance(value, list):
+            if isinstance(conversion, str) and conversion.isnumeric():
+                return str(value[int(conversion)])
             return [f(v, conversion) for v in value]
         else:
             return f(value, conversion)
@@ -319,7 +321,8 @@ class Superplot:
     def format_string(self, string, unique=True, grouped=True):
         if not grouped:
             results = [
-                subplot.format_string(string, unique) for subplot in self.subplots
+                subplot.format_string(string, unique, grouped)
+                for subplot in self.subplots
             ]
             result = metadata.list_to_human(results)
         else:
@@ -332,7 +335,7 @@ class Superplot:
             method(self, *args, **kwargs)
 
     @schema.legend.apply()
-    def legend(self, *args, fontsize=None, location=None, **kwargs):
+    def legend(self, *args, location=None, **kwargs):
         legends = []
         for i, layer in enumerate(self.distinct_legend_layers):
             if isinstance(location, (list, tuple)):
@@ -350,6 +353,15 @@ class Superplot:
 
     @defer
     def add_geometries(self, *args, **kwargs):
+        """
+        Plot geometries on all subplots.
+
+        Parameters
+        ----------
+        shapes : geopandas.GeoDataFrame or earthkit.data
+
+        shapes, *args, crs=None, labels=False, label_kwargs=None, **kwargs
+        """
         return [subplot.add_geometries(*args, **kwargs) for subplot in self.subplots]
 
     @property
@@ -357,11 +369,40 @@ class Superplot:
         return self.subplots[0]._default_title_template
 
     @schema.title.apply()
-    def title(self, label=None, unique=True, grouped=True, wrap=True, **kwargs):
+    def title(self, label=None, unique=True, grouped=True, **kwargs):
+        """
+        Add a top-level title to the chart.
+
+        Parameters
+        ----------
+        label : str, optional
+            The text to use in the title. This text can include format keys
+            surrounded by `{}` curly brackets, which will extract metadata from
+            your plotted data layers.
+        unique : bool, optional
+            If True, format keys which are uniform across subplots/layers will
+            produce a single result. For example, if all data layers have the
+            same `variable_name`, only one variable name will appear in the
+            title.
+            If False, each format key will evaluate to a list of values found
+            across subplots/layers.
+        grouped : bool, optional
+            If True, a single title will be generated to represent all data
+            layers, with each format key evaluating to a list where layers
+            differ - e.g. `"{variable} at {time}"` might be evaluated to
+            `"temperature and wind at 2023-01-01 00:00".
+            If False, the title will be duplicated by the number of subplots/
+            layers - e.g. `"{variable} at {time}"` might be evaluated to
+            `"temperature at 2023-01-01 00:00 and wind at 2023-01-01 00:00".
+        kwargs : dict, optional
+            Keyword argument to matplotlib.pyplot.suptitle (see
+            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.suptitle.html#matplotlib-pyplot-suptitle
+            ).
+        """
         if label is None:
             label = self._default_title_template
         label = self.format_string(label, unique, grouped)
-        return self.fig.suptitle(label, wrap=wrap, **kwargs)
+        return self.fig.suptitle(label, **kwargs)
 
     def subplot_titles(self, *args, **kwargs):
         if args and isinstance(args[0], (list, tuple)):
