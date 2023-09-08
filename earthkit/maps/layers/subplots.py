@@ -38,6 +38,8 @@ class SubplotFormatter(metadata.BaseFormatter):
     def convert_field(self, value, conversion):
         f = super().convert_field
         if isinstance(value, list):
+            if isinstance(conversion, str) and conversion.isnumeric():
+                return str(value[int(conversion)])
             return [f(v, conversion) for v in value]
         else:
             return f(value, conversion)

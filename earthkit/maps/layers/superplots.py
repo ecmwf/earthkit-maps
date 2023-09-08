@@ -34,6 +34,8 @@ class SuperplotFormatter(metadata.BaseFormatter):
     def convert_field(self, value, conversion):
         f = super().convert_field
         if isinstance(value, list):
+            if isinstance(conversion, str) and conversion.isnumeric():
+                return str(value[int(conversion)])
             return [f(v, conversion) for v in value]
         else:
             return f(value, conversion)
@@ -332,7 +334,7 @@ class Superplot:
             method(self, *args, **kwargs)
 
     @schema.legend.apply()
-    def legend(self, *args, fontsize=None, location=None, **kwargs):
+    def legend(self, *args, location=None, **kwargs):
         legends = []
         for i, layer in enumerate(self.distinct_legend_layers):
             if isinstance(location, (list, tuple)):
@@ -358,6 +360,16 @@ class Superplot:
 
     @schema.title.apply()
     def title(self, label=None, unique=True, grouped=True, wrap=True, **kwargs):
+        """
+        Add a top-level title to the chart.
+
+        Parameters
+        ----------
+        label : str, optional
+            The text to use in the title. This text can include format keys
+            surrounded by `{}` curly brackets, which will extract metadata from
+            your plot
+        """
         if label is None:
             label = self._default_title_template
         label = self.format_string(label, unique, grouped)
