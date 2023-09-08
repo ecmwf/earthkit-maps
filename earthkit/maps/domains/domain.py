@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import cartopy.crs as ccrs
-import cv2
 import numpy as np
+import scipy.ndimage as sn
 
 from earthkit.maps import data, domains
 
@@ -185,7 +185,7 @@ class Domain:
                 )
 
                 kernel = np.ones((8, 8), dtype="uint8")
-                bbox = cv2.dilate(bbox.astype("uint8"), kernel).astype(bool)
+                bbox = sn.morphology.binary_dilation(bbox, kernel).astype(bool)
 
                 shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape
 
