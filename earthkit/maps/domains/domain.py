@@ -22,8 +22,13 @@ DOMAIN_LOOKUP = data.load("domains")
 
 
 NO_TRANSFORM_FIRST = [
-    # ccrs.Stereographic,
-    # ccrs.NearsidePerspective,
+    ccrs.Stereographic,
+    ccrs.NearsidePerspective,
+    ccrs.TransverseMercator,
+]
+
+NO_BBOX = [
+    ccrs.TransverseMercator,
 ]
 
 
@@ -105,7 +110,17 @@ class Domain:
 
     @property
     def _can_transform_first(self):
-        return not any(isinstance(self.crs, crs) for crs in NO_TRANSFORM_FIRST)
+        can_transform = True
+        if any(isinstance(self.crs, crs) for crs in NO_TRANSFORM_FIRST):
+            can_transform = False
+        return can_transform
+
+    @property
+    def _can_bbox(self):
+        can_bbox = True
+        if any(isinstance(self.crs, crs) for crs in NO_BBOX):
+            can_bbox = False
+        return can_bbox
 
     @property
     def title(self):
@@ -175,23 +190,26 @@ class Domain:
                     points["y"] = np.roll(points["y"], roll_by, axis=1)
                     values = np.roll(values, roll_by, axis=1)
 
-                bbox = np.where(
-                    (points["x"] >= crs_bounds[0])
-                    & (points["x"] <= crs_bounds[1])
-                    & (points["y"] >= crs_bounds[2])
-                    & (points["y"] <= crs_bounds[3]),
-                    True,
-                    False,
-                )
+                if self._can_bbox:
+                    bbox = np.where(
+                        (points["x"] >= crs_bounds[0])
+                        & (points["x"] <= crs_bounds[1])
+                        & (points["y"] >= crs_bounds[2])
+                        & (points["y"] <= crs_bounds[3]),
+                        True,
+                        False,
+                    )
 
-                kernel = np.ones((8, 8), dtype="uint8")
-                bbox = sn.morphology.binary_dilation(bbox, kernel).astype(bool)
+                    kernel = np.ones((8, 8), dtype="uint8")
+                    bbox = sn.morphology.binary_dilation(bbox, kernel).astype(bool)
 
-                shape = bbox[np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))].shape
+                    shape = bbox[
+                        np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))
+                    ].shape
 
-                points["x"] = points["x"][bbox].reshape(shape)
-                points["y"] = points["y"][bbox].reshape(shape)
-                values = values[bbox].reshape(shape)
+                    points["x"] = points["x"][bbox].reshape(shape)
+                    points["y"] = points["y"][bbox].reshape(shape)
+                    values = values[bbox].reshape(shape)
 
         return values, points
 
