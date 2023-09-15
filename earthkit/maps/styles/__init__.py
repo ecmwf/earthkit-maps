@@ -235,6 +235,10 @@ class Style:
         kwargs = {**self.to_contourf_kwargs(values), **kwargs}
         return ax.contourf(x, y, values, *args, **kwargs)
 
+    def tricontourf(self, ax, x, y, values, *args, **kwargs):
+        kwargs = {**self.to_contourf_kwargs(values), **kwargs}
+        return ax.tricontourf(x, y, values, *args, **kwargs)
+
     def contour(self, ax, x, y, values, *args, **kwargs):
         kwargs = {**self.to_contour_kwargs(values), **kwargs}
         return ax.contour(x, y, values, *args, **kwargs)

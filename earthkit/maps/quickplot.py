@@ -44,4 +44,4 @@ def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None, **kwargs):
     for method, method_kwargs in blueprint.items():
         getattr(chart, method)(**method_kwargs)
 
-    chart.show()
+    return chart
