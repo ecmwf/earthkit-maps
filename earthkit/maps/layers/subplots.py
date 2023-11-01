@@ -131,7 +131,7 @@ class Subplot:
                     x, y, values = extract_reduced_gg(data, self.domain)
                     kwargs.pop("transform_first", None)
                     transform = self.domain.crs
-                    # self.ax.set_global()
+
                 else:
                     x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
@@ -263,7 +263,9 @@ class Subplot:
         return style.contourf(self.ax, *args, **kwargs)
 
     def _tricontourf(self, *args, style=None, **kwargs):
+
         kwargs.pop("transform", None)
+
         return style.tricontourf(self.ax, *args, **kwargs)
 
     @polygonal
