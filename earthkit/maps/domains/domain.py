@@ -124,9 +124,9 @@ class Domain:
 
     @property
     def title(self):
-        if self.domain_name in DOMAIN_LOOKUP["the_countries"]:
-            return f"the {self.domain_name}"
-        elif self.domain_name is None:
+        # if self.domain_name in DOMAIN_LOOKUP["the_countries"]:
+        #     return f"the {self.domain_name}"
+        if self.domain_name is None:
             if self.bounds is None:
                 string = "custom domain"
             else:

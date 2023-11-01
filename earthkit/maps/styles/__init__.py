@@ -32,12 +32,17 @@ logger = logging.getLogger(__name__)
 DEFAULT_LEGEND_LABEL = "{variable_name} ({units})"
 
 
-def auto_range(data, n_levels=8):
+def auto_range(data, divergence_point=None, n_levels=8):
 
     if isinstance(data, earthkit.data.core.Base):
         data = data.to_numpy()
     min_value = np.nanmin(data)
     max_value = np.nanmax(data)
+
+    if divergence_point == 0:
+        abs_max = max(abs(min_value), abs(max_value))
+        min_value = -abs_max
+        max_value = abs_max
 
     data_range = max_value - min_value
 
@@ -113,6 +118,7 @@ class Style:
         self,
         colors="auto",
         levels=None,
+        divergence_point=None,
         level_step=None,
         level_multiple=None,
         units=None,
@@ -134,6 +140,7 @@ class Style:
         self._levels = levels
         self._level_step = level_step
         self._level_multiple = level_multiple
+        self._divergence_point = divergence_point
 
         self.legend_type = legend_type
 
@@ -181,7 +188,7 @@ class Style:
     def levels(self, data):
         if self._levels is None:
             if self._level_step is None:
-                return auto_range(data)
+                return auto_range(data, self._divergence_point)
             else:
                 return step_range(data, self._level_step, self._level_multiple)
         return self._levels

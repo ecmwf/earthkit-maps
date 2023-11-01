@@ -422,10 +422,10 @@ class Superplot:
         self._release_queue()
         plt.show(*args, **kwargs)
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, bbox_inches="tight", **kwargs):
         """Save the chart."""
         if len(self) == 0:
             self._rows, self._cols = (1, 1)
             self.add_subplot()
         self._release_queue()
-        return plt.savefig(*args, **kwargs)
+        return plt.savefig(*args, bbox_inches=bbox_inches, **kwargs)
