@@ -115,6 +115,8 @@ class Subplot:
                 except (ValueError, TypeError, AttributeError):
                     pass
             # --------------------------------------------------------------
+
+            is_reduced_gg = False
             if x is not None and y is not None:
                 if transform is None:
                     raise ValueError(
@@ -123,7 +125,13 @@ class Subplot:
                     )
                 values = data
             else:
-                x, y, values = extract_scalar(data, self.domain)
+                if data.metadata("gridType", default=None) == "reduced_gg":
+                    is_reduced_gg = True
+                    x, y, values = extract_reduced_gg(data, self.domain)
+                    kwargs.pop("transform_first", None)
+                    transform = self.domain.crs
+                else:
+                    x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
                     try:
                         transform = data.projection().to_cartopy_crs()
@@ -142,12 +150,28 @@ class Subplot:
 
             values = style.convert_units(values, source_units, short_name=short_name)
 
-            if "transform_first" not in kwargs:
+            if "transform_first" not in kwargs and not is_reduced_gg:
                 kwargs["transform_first"] = self._can_transform_first(method)
 
-            mappable = method(
-                self, x, y, values, style=style, transform=transform, **kwargs
-            )
+            if is_reduced_gg:
+                mappable = self._tricontourf(
+                    x,
+                    y,
+                    values,
+                    style=style,
+                    transform=transform,
+                    **kwargs,
+                )
+            else:
+                mappable = method(
+                    self,
+                    x,
+                    y,
+                    values,
+                    style=style,
+                    transform=transform,
+                    **kwargs,
+                )
 
             layer = Layer(data, mappable, self, style=style)
             self.layers.append(layer)
@@ -235,6 +259,9 @@ class Subplot:
     @gridded_scalar
     def contourf(self, *args, style=None, **kwargs):
         return style.contourf(self.ax, *args, **kwargs)
+
+    def _tricontourf(self, *args, style=None, **kwargs):
+        return style.tricontourf(self.ax, *args, **kwargs)
 
     @polygonal
     def polygons(self, *args, style=None, **kwargs):
@@ -484,3 +511,18 @@ def extract_vector(data, domain):
     x, y, u_values = extract_scalar(data[0], domain)
     _, _, v_values = extract_scalar(data[1], domain)
     return x, y, (u_values, v_values)
+
+
+def extract_reduced_gg(data, domain):
+    values = data.values
+    points = data.to_points()
+
+    xy = domain.crs.transform_points(
+        ccrs.PlateCarree(),
+        points["x"],
+        points["y"],
+    )
+    x = xy[:, 0]
+    y = xy[:, 1]
+
+    return x, y, values
