@@ -316,6 +316,8 @@ tags
 
 ### VisualStudioCode ###
 .vscode/
+.DS_Store
+docs/.DS_Store
 # .vscode/*
 # !.vscode/settings.json
 # !.vscode/tasks.json
