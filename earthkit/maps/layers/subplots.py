@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cartopy.io.shapereader as shpreader
@@ -130,6 +131,7 @@ class Subplot:
                     x, y, values = extract_reduced_gg(data, self.domain)
                     kwargs.pop("transform_first", None)
                     transform = self.domain.crs
+
                 else:
                     x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
@@ -261,6 +263,9 @@ class Subplot:
         return style.contourf(self.ax, *args, **kwargs)
 
     def _tricontourf(self, *args, style=None, **kwargs):
+
+        kwargs.pop("transform", None)
+
         return style.tricontourf(self.ax, *args, **kwargs)
 
     @polygonal
