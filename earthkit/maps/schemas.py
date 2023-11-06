@@ -156,14 +156,18 @@ class Schema(dict):
         Parameters
         ----------
         name : str
-            The name of the schema to use.
+            The name of the schema to use, or path to 
+            user implemented schema.
 
         Example
         -------
         >>> schema.use("default")
+        >>> schema.use("~/custom.yaml")
         """
         file_name = definitions.SCHEMA_DIR / f"{name}.yaml"
         if not os.path.exists(file_name):
+            if os.path.exists(name):
+                file_name = name
             raise SchemaNotFoundError(f"no schema '{name}' found")
         with open(file_name, "r") as f:
             kwargs = yaml.load(f, Loader=yaml.SafeLoader)
