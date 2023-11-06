@@ -168,7 +168,8 @@ class Schema(dict):
         if not os.path.exists(file_name):
             if os.path.exists(name):
                 file_name = name
-            raise SchemaNotFoundError(f"no schema '{name}' found")
+            else:
+                raise SchemaNotFoundError(f"no schema '{name}' found")
         with open(file_name, "r") as f:
             kwargs = yaml.load(f, Loader=yaml.SafeLoader)
         self._reset(**kwargs)
