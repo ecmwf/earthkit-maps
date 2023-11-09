@@ -27,6 +27,8 @@ release = "0.0.0"  # earthkit.maps.__version__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx_rtd_theme",
+    "nbsphinx",
     # "autoapi.extension",
     # "myst_parser",
     # "sphinx.ext.autodoc",
