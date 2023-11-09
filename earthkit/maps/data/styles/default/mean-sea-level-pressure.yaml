@@ -1,5 +1,0 @@
-styles:
-  default: pressure.MEAN_SEA_LEVEL_PRESSURE_IN_HPA
-  units:
-    Pa: pressure.MEAN_SEA_LEVEL_PRESSURE_IN_PA
-    hPa: pressure.MEAN_SEA_LEVEL_PRESSURE_IN_HPA

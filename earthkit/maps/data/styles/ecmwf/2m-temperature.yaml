@@ -1,4 +1,0 @@
-styles:
-  default: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
-  units:
-    celsius: temperature.TEMPERATURE_AT_2M_IN_CELSIUS

@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import cartopy.crs as ccrs
 import numpy as np
-import scipy.ndimage as sn
 
 from earthkit.maps import data, domains
 
@@ -191,25 +192,39 @@ class Domain:
                     values = np.roll(values, roll_by, axis=1)
 
                 if self._can_bbox:
-                    bbox = np.where(
-                        (points["x"] >= crs_bounds[0])
-                        & (points["x"] <= crs_bounds[1])
-                        & (points["y"] >= crs_bounds[2])
-                        & (points["y"] <= crs_bounds[3]),
-                        True,
-                        False,
-                    )
 
-                    kernel = np.ones((8, 8), dtype="uint8")
-                    bbox = sn.morphology.binary_dilation(bbox, kernel).astype(bool)
+                    try:
+                        import scipy.ndimage as sn
+                    except ImportError:
+                        warnings.warn(
+                            "No scipy installation found; scipy is required to "
+                            "speed up plotting of smaller domains by slicing "
+                            "the input data. Consider installing scipy to speed "
+                            "up this process."
+                        )
+                    finally:
+                        bbox = np.where(
+                            (points["x"] >= crs_bounds[0])
+                            & (points["x"] <= crs_bounds[1])
+                            & (points["y"] >= crs_bounds[2])
+                            & (points["y"] <= crs_bounds[3]),
+                            True,
+                            False,
+                        )
 
-                    shape = bbox[
-                        np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))
-                    ].shape
+                        kernel = np.ones((8, 8), dtype="uint8")
+                        bbox = sn.morphology.binary_dilation(
+                            bbox,
+                            kernel,
+                        ).astype(bool)
 
-                    points["x"] = points["x"][bbox].reshape(shape)
-                    points["y"] = points["y"][bbox].reshape(shape)
-                    values = values[bbox].reshape(shape)
+                        shape = bbox[
+                            np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))
+                        ].shape
+
+                        points["x"] = points["x"][bbox].reshape(shape)
+                        points["y"] = points["y"][bbox].reshape(shape)
+                        values = values[bbox].reshape(shape)
 
         return values, points
 

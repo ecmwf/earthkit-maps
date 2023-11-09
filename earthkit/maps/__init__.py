@@ -19,36 +19,3 @@ try:
 except ImportError:  # pragma: no cover
     # Local copy or not installed with setuptools
     __version__ = "999"
-
-import glob
-import os
-
-from matplotlib import font_manager, rcParams
-
-from earthkit.maps import shapes, styles
-from earthkit.maps.definitions import FONTS_DIR
-from earthkit.maps.layers.superplots import Superplot
-from earthkit.maps.quickplot import quickplot
-from earthkit.maps.schemas import schema
-
-__all__ = [
-    "quickplot",
-    "shapes",
-    "styles",
-    "Superplot",
-    "schema",
-]
-
-
-def register_fonts():
-    fontpaths = glob.glob(os.path.join(FONTS_DIR, "*"))
-    for fontpath in fontpaths:
-        font_files = glob.glob(os.path.join(fontpath, "*.ttf"))
-        for font_file in font_files:
-            font_manager.fontManager.addfont(font_file)
-
-
-register_fonts()
-rcParams["font.family"] = schema.font
-rcParams["axes.linewidth"] = 0.5
-rcParams["axes.edgecolor"] = "#555"

@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from earthkit.maps import domains
 
-from earthkit.maps import styles
 
-SOIL_LOSS_IN_T_PER_HA_PER_YR = styles.Contour(
-    colors="Spectral_r",
-    levels=[0, 0.5, 1, 2, 3.5, 6, 20, 100],
-    units="t ha-1 yr-1",
-)
+class Chart:
+    def __init__(self, domain=None, crs=None, rows=None, cols=None):
+
+        self._domain = domain
+        self._crs = crs
+
+        self.domain = domains.parse(domain, crs)
