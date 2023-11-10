@@ -14,6 +14,7 @@
 
 
 from earthkit.maps import schema
+from earthkit.maps.styles.levels import Levels
 
 
 class Style:
@@ -29,18 +30,16 @@ class Style:
         (four)-element lists of RGB(A) values), or a pre-defined matplotlib
         colormap object. If not provided, the default colormap of the active
         `schema` will be used.
-    levels : list or dict, optional
+    levels : list or earthkit.maps.styles.levels.Levels, optional
         The levels to use in this `Style`. This can be a list of specific
-        levels, or a dictionary containing a `step` and an
-        If not provided, some suitable levels
-        will be generated automatically (experimental!).
+        levels, or an earthkit `Levels` object. If not provided, some suitable
+        levels will be generated automatically (experimental!).
     units : str, optional
         The units in which the levels are defined. If this `Style` is used with
         data not using the given units, then a conversion will be attempted;
         any data incompatible with these units will not be able to use this
         `Style`. If `units` are not provided, then data plotted using this
         `Style` will remain in their original units.
-
     """
 
     def __init__(
@@ -48,39 +47,22 @@ class Style:
         colors=schema.cmap,
         levels=None,
         units=None,
-        divergence_point=None,
-        level_step=None,
-        level_multiple=None,
-        units_override=None,
-        normalize=True,
-        legend_type="colorbar",
-        categories=None,
-        conversion=None,
-        ticks=None,
-        gradients=None,
-        missing=None,
-        **kwargs,
     ):
         self._colors = colors
-
-        self._levels = levels
-        self._level_step = level_step
-        self._level_multiple = level_multiple
-        self._divergence_point = divergence_point
-
-        self.legend_type = legend_type
-        self._legend_kwargs = kwargs.get("legend_kwargs", {})
-        if ticks is not None:
-            self._legend_kwargs["ticks"] = ticks
-        self.gradients = gradients
-
+        self._levels = levels if isinstance(levels, Levels) else Levels(levels)
         self._units = units
-        self._units_override = units_override
-        self.normalize = normalize
-        self.kwargs = kwargs
 
-        self.conversion = conversion
+    def levels(self, data):
+        """
+        Generate levels specific to some data.
 
-        self._categories = categories
+        Parameters
+        ----------
+        data : numpy.ndarray or xarray.DataArray or earthkit.data.core.Base
+            The data for which to generate a list of levels.
 
-        self._missing = missing
+        Returns
+        -------
+        list
+        """
+        return self._levels.apply(data)
