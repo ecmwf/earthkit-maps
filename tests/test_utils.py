@@ -24,3 +24,11 @@ def test_recursive_dict_update():
         "foo": "baz",
         "qux": 42,
     }
+
+
+def test_list_to_human():
+    assert utils.list_to_human(["a"]) == "a"
+    assert utils.list_to_human(["a", "b"]) == "a and b"
+    assert utils.list_to_human(["a", "b", "c"]) == "a, b and c"
+    assert utils.list_to_human(["a", "b", "c"], oxford_comma=True) == "a, b, and c"
+    assert utils.list_to_human(["a", "b", "c"], conjunction="et") == "a, b et c"

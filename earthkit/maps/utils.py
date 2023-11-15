@@ -32,3 +32,28 @@ def recursive_dict_update(original_dict, update_dict):
         else:
             original_dict[k] = v
     return original_dict
+
+
+def list_to_human(iterable, conjunction="and", oxford_comma=False):
+    """
+    Convert an iterable to a human-readable string.
+
+    Parameters
+    ----------
+    iterable : list or tuple
+        The list of strings to convert to a single natural language string.
+    conjunction : str, optional
+        The conjunction with which to join the last two elements of the list,
+        for example "and" (default).
+    oxford_comma : bool, optional
+        If `True`, an "Oxford comma" will be added before the conjunction when
+        there are three or more elements in the list. Default is `False`.
+    """
+    list_of_strs = [str(item) for item in iterable]
+
+    if len(list_of_strs) > 2:
+        list_of_strs = [", ".join(list_of_strs[:-1]), list_of_strs[-1]]
+        if oxford_comma:
+            list_of_strs[0] += ","
+
+    return f" {conjunction} ".join(list_of_strs)

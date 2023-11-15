@@ -19,3 +19,16 @@ try:
 except ImportError:  # pragma: no cover
     # Local copy or not installed with setuptools
     __version__ = "999"
+
+from earthkit.maps.schemas import schema  # isort:skip
+
+from earthkit.maps.charts import Chart
+from earthkit.maps.quickplot import quickplot
+from earthkit.maps.styles import Style
+
+__all__ = [
+    "Chart",
+    "Style",
+    "quickplot",
+    "schema",
+]

@@ -33,6 +33,21 @@ def expand(colors, levels):
     return colors
 
 
+def cmap_and_norm(colors, levels, normalize=True):
+    colors = expand(colors, levels)
+    cmap = LinearSegmentedColormap.from_list(
+        name="",
+        colors=colors,
+        N=len(levels),
+    )
+
+    norm = None
+    if normalize:
+        norm = BoundaryNorm(levels, cmap.N)
+
+    return cmap, norm
+
+
 def gradients(levels, colors, gradients, normalize, **kwargs):
 
     normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
