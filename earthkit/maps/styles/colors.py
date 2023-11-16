@@ -33,6 +33,12 @@ def expand(colors, levels):
     return colors
 
 
+def contour_line_colors(colors, levels):
+    colors = expand(colors, levels)
+    cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
+    return cmap
+
+
 def cmap_and_norm(colors, levels, normalize=True):
     colors = expand(colors, levels)
     cmap = LinearSegmentedColormap.from_list(

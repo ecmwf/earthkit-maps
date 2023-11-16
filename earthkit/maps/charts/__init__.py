@@ -366,14 +366,15 @@ class Chart:
             label = self._default_title_template
         label = self.format_string(label, unique, grouped)
 
-        if y is None:
-            y = 0
-            for subplot in self:
-                y = max(y, subplot.ax.get_position().y1)
-                if subplot.ax.title.get_text():
-                    y += 0.05
-            kwargs["va"] = kwargs.get("va", kwargs.get("verticalalignment", "bottom"))
+        # if y is None:
+        #     y = 0
+        #     for subplot in self:
+        #         y = max(y, subplot.ax.get_position().y1)
+        #         if subplot.ax.title.get_text():
+        #             y += 0.05
+        #     kwargs["va"] = kwargs.get("va", kwargs.get("verticalalignment", "bottom"))
 
+        self.fig.canvas.draw()
         return self.fig.suptitle(label, y=y, **kwargs)
 
     def subplot_titles(self, *args, **kwargs):

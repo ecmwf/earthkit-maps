@@ -14,10 +14,12 @@
 
 import cartopy.feature as cfeature
 import earthkit.data
+import matplotlib.pyplot as plt
 
-from earthkit.maps import domains, inputs, schema
+from earthkit.maps import domains, inputs, schema, utils
 from earthkit.maps.charts.layers import Layer
 from earthkit.maps.domains import natural_earth
+from earthkit.maps.metadata.formatters import LayerFormatter, SubplotFormatter
 
 
 class Subplot:
@@ -99,7 +101,9 @@ class Subplot:
         """
 
         def wrapper(self, data, *args, transform_first=None, style=None, **kwargs):
-            input_data = inputs.Input(data, *args, style=style, **kwargs)
+            input_data = inputs.Input(
+                data, *args, domain=self.domain, style=style, **kwargs
+            )
 
             kwargs.pop("x", None)
             kwargs.pop("y", None)
@@ -242,3 +246,34 @@ class Subplot:
                 legend = layer.style.legend(layer, *args, **kwargs)
             legends.append(legend)
         return legends
+
+    @property
+    def _default_title_template(self):
+        templates = [layer._default_title_template for layer in self.layers]
+        if len(set(templates)) == 1:
+            template = templates[0]
+        else:
+            title_parts = []
+            for i, template in enumerate(templates):
+                keys = [k for _, k, _, _ in SubplotFormatter().parse(template)]
+                for key in set(keys):
+                    template = template.replace("{" + key, "{" + key + f"!{i}")
+                title_parts.append(template)
+            template = utils.list_to_human(title_parts)
+        return template
+
+    @schema.title.apply()
+    def title(self, label=None, unique=True, wrap=True, **kwargs):
+        if label is None:
+            label = self._default_title_template
+        label = self.format_string(label, unique)
+        plt.sca(self.ax)
+        return plt.title(label, wrap=wrap, **kwargs)
+
+    def format_string(self, string, unique=True, grouped=True):
+        if not grouped:
+            return utils.list_to_human(
+                [LayerFormatter(layer).format(string) for layer in self.layers]
+            )
+        else:
+            return SubplotFormatter(self, unique=unique).format(string)

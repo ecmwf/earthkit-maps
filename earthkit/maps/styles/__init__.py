@@ -35,7 +35,8 @@ class Style:
     ----------
     colors : str or list or matplotlib.colors.Colormap, optional
         The colors to be used in this `Style`. This can be a
-        `named matplotlib colormap <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`__,
+        `named matplotlib colormap
+        <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`__,
         a list of colors (as named CSS4 colors, hexadecimal colors or three
         (four)-element lists of RGB(A) values), or a pre-defined matplotlib
         colormap object. If not provided, the default colormap of the active
@@ -63,6 +64,14 @@ class Style:
     bin_labels : list, optional
         A list of categorical labels for each bin in the legend.
     """
+
+    @classmethod
+    def from_yaml(cls, yaml_file):
+        pass
+
+    @classmethod
+    def from_magics_style(cls, magics_style):
+        pass
 
     def __init__(
         self,
@@ -102,6 +111,12 @@ class Style:
             self._legend_kwargs["ticks"] = ticks
 
         self._kwargs = kwargs
+
+    def to_yaml(self):
+        pass
+
+    def to_magics_style(self):
+        pass
 
     def levels(self, data):
         """
@@ -340,11 +355,17 @@ class Style:
             return
 
         try:
-            method = getattr(styles.legends, self._legend_style)
+            method = getattr(self, self._legend_style)
         except AttributeError:
             raise AttributeError(f"invalid legend type '{self._legend_style}'")
 
         return method(*args, **kwargs)
+
+    def colorbar(self, *args, **kwargs):
+        return styles.legends.colorbar(*args, **kwargs)
+
+    def disjoint(self, *args, **kwargs):
+        return styles.legends.disjoint(*args, **kwargs)
 
     def save_legend_graphic(self, data, filename="legend.png", **kwargs):
         backend = mpl.get_backend()
@@ -399,6 +420,123 @@ class Style:
         fig.savefig(filename, dpi="figure", bbox_inches=bbox)
 
         plt.savefig(filename, dpi="figure", bbox_inches=bbox)
+
+
+class Contour(Style):
+    def __init__(
+        self,
+        *args,
+        line_colors=None,
+        labels=False,
+        label_kwargs=None,
+        interpolate=True,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self._line_colors = line_colors
+        self.labels = labels
+        self._label_kwargs = label_kwargs or dict()
+        self._interpolate = interpolate
+        self._kwargs["linewidths"] = kwargs.get("linewidths", 0.5)
+
+    def plot(self, *args, **kwargs):
+        if self._colors is not None:
+            if self._interpolate:
+                return self.contourf(*args, **kwargs)
+            else:
+                return self.pcolormesh(*args, **kwargs)
+        else:
+            return self.contour(*args, **kwargs)
+
+    def to_contour_kwargs(self, data):
+        kwargs = super().to_contour_kwargs(data)
+
+        if self._colors and self._line_colors:
+            kwargs["cmap"] = colors.contour_line_colors(
+                self._line_colors,
+                kwargs["levels"],
+            )
+
+        return kwargs
+
+    def contourf(self, ax, x, y, values, *args, **kwargs):
+        mappable = super().contourf(ax, x, y, values, *args, **kwargs)
+        if self._line_colors is not None:
+            self.contour(ax, x, y, values, *args, **kwargs)
+        return mappable
+
+    def contour(self, *args, **kwargs):
+        mappable = super().contour(*args, **kwargs)
+
+        if self.labels:
+            self.contour_labels(mappable, **self._label_kwargs)
+
+        return mappable
+
+    def contour_labels(
+        self,
+        mappable,
+        label_fontsize=7,
+        label_colors=None,
+        label_frequency=1,
+        label_background=None,
+        label_fmt=None,
+    ):
+        clabels = mappable.axes.clabel(
+            mappable,
+            mappable.levels[0::label_frequency],
+            inline=True,
+            fontsize=label_fontsize,
+            colors=label_colors,
+            fmt=label_fmt,
+            inline_spacing=2,
+        )
+        if label_background is not None:
+            for label in clabels:
+                label.set_backgroundcolor(label_background)
+
+        return clabels
+
+
+class Hatched(Contour):
+    def __init__(self, *args, hatches=".", background_colors=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.hatches = hatches
+        self._foreground_colors = self._colors
+        self._colors = background_colors or [(0, 0, 0, 0)]
+
+    def contourf(self, *args, **kwargs):
+        mappable = super().contourf(*args, hatches=self.hatches, **kwargs)
+
+        line_colors = colors.expand(self._foreground_colors, mappable.levels)
+
+        for i, collection in enumerate(mappable.collections):
+            collection.set_edgecolor(line_colors[i])
+            collection.set_linewidth(0)
+
+        return mappable
+
+    def colorbar(self, *args, **kwargs):
+        colorbar = super().colorbar(*args, **kwargs)
+
+        levels = colorbar.mappable.levels
+
+        line_colors = colors.expand(self._foreground_colors, levels)
+        for i, artist in enumerate(colorbar.solids_patches):
+            artist.set_edgecolor(line_colors[i])
+
+        return colorbar
+
+    def disjoint(self, layer, *args, **kwargs):
+        legend = super().disjoint(layer, *args, **kwargs)
+
+        line_colors = colors.expand(self._foreground_colors, layer.mappable.levels)
+
+        for color, artist in zip(line_colors, legend.get_patches()):
+            artist.set_edgecolor(color)
+            artist.set_linewidth(0.0)
+
+        return legend
 
 
 def auto(data, units=None):

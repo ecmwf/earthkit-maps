@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from earthkit.maps import utils
+from earthkit.maps import metadata, utils
 from earthkit.maps.metadata.formatters import LayerFormatter
 
 
@@ -57,6 +57,14 @@ class Layer:
 
     def format_string(self, string):
         return LayerFormatter(self).format(string)
+
+    @property
+    def _default_title_template(self):
+        if self.data.metadata("type", default="an") == "an":
+            template = metadata.DEFAULT_ANALYSIS_TITLE
+        else:
+            template = metadata.DEFAULT_FORECAST_TITLE
+        return template
 
 
 class LayerGroup:

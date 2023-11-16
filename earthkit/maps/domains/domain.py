@@ -162,7 +162,6 @@ class Domain:
         values = field.to_numpy(flatten=False)
 
         if self.bounds and schema.extract_domain:
-
             try:
                 crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
             except NotImplementedError:

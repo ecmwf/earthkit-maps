@@ -2,7 +2,7 @@
 font: Open Sans
 cmap: magma
 n_levels: 8
-figsize: [10, 7.5]
+figsize: [9, 7.5]
 dpi: 100
 extract_domain: true
 style_library: default

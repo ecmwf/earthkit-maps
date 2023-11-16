@@ -63,6 +63,7 @@ def colorbar(layer, *args, shrink=0.8, aspect=35, **kwargs):
     cbar = layer.fig.colorbar(
         layer.mappable,
         *args,
+        ax=layer.axes,
         label=label,
         shrink=shrink,
         aspect=aspect,
@@ -97,7 +98,6 @@ def disjoint(layer, *args, location="bottom", frameon=False, **kwargs):
     artists, labels = layer.mappable.legend_elements()
 
     labels = kwargs.pop("labels", layer.style._bin_labels) or labels
-
     legend = source.legend(
         artists,
         labels,
@@ -112,5 +112,7 @@ def disjoint(layer, *args, location="bottom", frameon=False, **kwargs):
     if hasattr(layer.fig, "_previous_legend"):
         layer.fig.add_artist(layer.fig._previous_legend)
     layer.fig._previous_legend = legend
+
+    layer.fig.canvas.draw()
 
     return legend

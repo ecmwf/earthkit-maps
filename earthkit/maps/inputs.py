@@ -23,14 +23,16 @@ class Input:
     Class for managing input data for charts.
     """
 
-    def __init__(self, data, x=None, y=None, transform=None, style=None, **kwargs):
+    def __init__(
+        self, data, x=None, y=None, transform=None, style=None, domain=None, **kwargs
+    ):
         self._data = data
         self._transform = transform
 
         self.x = x
         self.y = y
         self._values = None
-        self.extract_scalar()
+        self.extract_scalar(domain)
 
         self._converted_values = None
 

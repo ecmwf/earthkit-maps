@@ -20,7 +20,7 @@ DEFAULT_BLUEPRINT = {
     "borders": {},
     "gridlines": {},
     "legend": {},
-    # "subplot_titles": {},
+    "subplot_titles": {},
 }
 
 
