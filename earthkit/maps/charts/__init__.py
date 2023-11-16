@@ -332,7 +332,7 @@ class Chart:
         return self.subplots[0]._default_title_template
 
     @schema.title.apply()
-    def title(self, label=None, unique=True, grouped=True, **kwargs):
+    def title(self, label=None, unique=True, grouped=True, y=None, **kwargs):
         """
         Add a top-level title to the chart.
 
@@ -365,7 +365,16 @@ class Chart:
         if label is None:
             label = self._default_title_template
         label = self.format_string(label, unique, grouped)
-        return self.fig.suptitle(label, **kwargs)
+
+        if y is None:
+            y = 0
+            for subplot in self:
+                y = max(y, subplot.ax.get_position().y1)
+                if subplot.ax.title.get_text():
+                    y += 0.05
+            kwargs["va"] = kwargs.get("va", kwargs.get("verticalalignment", "bottom"))
+
+        return self.fig.suptitle(label, y=y, **kwargs)
 
     def subplot_titles(self, *args, **kwargs):
         if args and isinstance(args[0], (list, tuple)):
