@@ -14,6 +14,7 @@
 
 import cartopy.crs as ccrs
 import earthkit.data
+import numpy as np
 
 from earthkit.maps import schema, styles
 
@@ -41,9 +42,11 @@ class Input:
 
     @property
     def data(self):
-        if not isinstance(self._data, earthkit.data.core.Base):
+        if not isinstance(self._data, (earthkit.data.core.Base, list, np.ndarray)):
             self._data = earthkit.data.from_object(self._data)
-        if hasattr(self._data, "__len__"):
+        if isinstance(self._data, earthkit.data.core.Base) and hasattr(
+            self._data, "__len__"
+        ):
             try:
                 self._data = self._data[0]
             except (ValueError, TypeError, AttributeError):
@@ -54,7 +57,7 @@ class Input:
     def source_units(self):
         try:
             units = self._data.metadata("units", default=None)
-        except NotImplementedError:
+        except (NotImplementedError, AttributeError):
             units = None
         return units
 
@@ -62,7 +65,7 @@ class Input:
     def short_name(self):
         try:
             short_name = self._data.metadata("short_name", default="")
-        except NotImplementedError:
+        except (NotImplementedError, AttributeError):
             short_name = ""
         return short_name
 

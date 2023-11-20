@@ -24,7 +24,7 @@ DEFAULT_BLUEPRINT = {
 }
 
 
-def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None, **kwargs):
+def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None, style=None, **kwargs):
     chart = Chart(**kwargs)
 
     if units is not None:
@@ -39,9 +39,9 @@ def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None, **kwargs):
         units = [None] * len(data)
 
     for item, unit in zip(data, units):
-        chart.plot(item, units=unit)
+        chart.plot(item, style=style)
 
     for method, method_kwargs in blueprint.items():
         getattr(chart, method)(**method_kwargs)
 
-    return chart
+    chart.show()

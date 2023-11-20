@@ -60,7 +60,7 @@ class Style:
         data.
     legend_style : str, optional
         The style of legend to use by default with this style. Must be one of
-        `colorbar` (default), `disjoint` or `histogram`.
+        `colorbar` (default), `disjoint`, `histogram`, or `None` (no legend).
     bin_labels : list, optional
         A list of categorical labels for each bin in the legend.
     """
@@ -118,7 +118,7 @@ class Style:
     def to_magics_style(self):
         pass
 
-    def levels(self, data):
+    def levels(self, data=None):
         """
         Generate levels specific to some data.
 
@@ -131,6 +131,14 @@ class Style:
         -------
         list
         """
+        if data is None:
+            if self._levels._levels is not None:
+                return self._levels._levels
+            else:
+                raise ValueError(
+                    "this style uses dynamic levels; include the `data` "
+                    "argument to generate levels"
+                )
         return self._levels.apply(data)
 
     @property
@@ -245,7 +253,7 @@ class Style:
 
     def plot(self, *args, **kwargs):
         """Plot the data using the `Style`'s defaults."""
-        raise NotImplementedError("Generic styles cannot be used with 'plot'")
+        return self.contourf(*args, **kwargs)
 
     def contourf(self, ax, x, y, values, *args, **kwargs):
         """
@@ -349,6 +357,20 @@ class Style:
         kwargs = {**self.to_scatter_kwargs(values), **kwargs}
         return ax.scatter(x, y, c=values, s=s, *args, **kwargs)
 
+    def values_to_colors(self, values, data=None):
+        """
+        Convert a value or list of values to colors based on this `Style`.
+
+        Parameters
+        ----------
+        values : float or list of floats
+            The values to convert to colors on this `Style`'s color scale.
+        """
+        mpl_kwargs = self.to_matplotlib_kwargs(data=data)
+        cmap = mpl_kwargs["cmap"]
+        norm = mpl_kwargs["norm"]
+        return cmap(norm(values))
+
     def legend(self, *args, **kwargs):
         """Create the default legend for this `Style`."""
         if self._legend_style is None:
@@ -367,19 +389,43 @@ class Style:
     def disjoint(self, *args, **kwargs):
         return styles.legends.disjoint(*args, **kwargs)
 
-    def save_legend_graphic(self, data, filename="legend.png", **kwargs):
+    def save_legend_graphic(self, filename="legend.png", data=None, **kwargs):
+        """
+        Save a standalone image of the legend associated with this `Style`.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the image to save.
+        data : earthkit.data.core.Base, optional
+            It can sometimes be useful to pass some data in order to
+            automatically generate legend labels or color ranges, depending on
+            the `Style`.
+        """
+        x = None
+        y = None
+
+        if data is None:
+            data = [[1, 2], [3, 4]]
+            x = [[1, 2], [3, 4]]
+            y = [[1, 2], [3, 4]]
+            kwargs["label"] = kwargs.get("label", "")
+
         backend = mpl.get_backend()
         mpl.use("Agg")
+
         try:
-            getattr(self, f"_save_{self._legend_style}_graphic")(data, filename, kwargs)
+            getattr(self, f"_save_{self._legend_style}_graphic")(
+                data, x, y, filename, kwargs
+            )
         finally:
             mpl.use(backend)
 
-    def _save_colorbar_graphic(self, data, filename, kwargs):
+    def _save_colorbar_graphic(self, data, x, y, filename, kwargs):
         from earthkit.maps import Chart
 
         chart = Chart()
-        chart.contourf(data, style=self)
+        chart.contourf(data, x=x, y=y, style=self)
 
         legend = chart.legend(**kwargs)
 
@@ -405,11 +451,11 @@ class Style:
 
         plt.savefig(filename, dpi="figure", bbox_inches=bbox)
 
-    def _save_disjoint_graphic(self, data, filename, kwargs):
+    def _save_disjoint_graphic(self, data, x, y, filename, kwargs):
         from earthkit.maps import Chart
 
         chart = Chart()
-        chart.contourf(data, style=self)
+        chart.contourf(data, x=x, y=y, style=self)
 
         legend = chart.legend(**kwargs)
 
@@ -425,14 +471,14 @@ class Style:
 class Contour(Style):
     def __init__(
         self,
-        *args,
+        colors=None,
         line_colors=None,
         labels=False,
         label_kwargs=None,
         interpolate=True,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__(colors=colors, **kwargs)
         self._line_colors = line_colors
         self.labels = labels
         self._label_kwargs = label_kwargs or dict()
@@ -449,15 +495,17 @@ class Contour(Style):
             return self.contour(*args, **kwargs)
 
     def to_contour_kwargs(self, data):
-        kwargs = super().to_contour_kwargs(data)
+        levels = self.levels(data)
+        cmap, norm = styles.colors.cmap_and_norm(
+            self._line_colors,
+            levels,
+            self.normalize,
+        )
 
-        if self._colors and self._line_colors:
-            kwargs["cmap"] = colors.contour_line_colors(
-                self._line_colors,
-                kwargs["levels"],
-            )
-
-        return kwargs
+        return {
+            **{"cmap": cmap, "norm": norm, "levels": levels},
+            **self._kwargs,
+        }
 
     def contourf(self, ax, x, y, values, *args, **kwargs):
         mappable = super().contourf(ax, x, y, values, *args, **kwargs)

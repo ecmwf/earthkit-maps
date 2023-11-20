@@ -25,6 +25,18 @@ def test_Style_static_levels():
     assert style.levels(range(9999)) == [1, 2, 3]
 
 
+def test_Style_levels():
+    static_style = styles.Style(levels=[1, 2, 3])
+    assert static_style.levels() == [1, 2, 3]
+
+    range_style = styles.Style(levels=range(-10, 11, 5))
+    assert range_style.levels() == range(-10, 11, 5)
+
+    dynamic_style = styles.Style()
+    with pytest.raises(ValueError):
+        dynamic_style.levels()
+
+
 def test_Style_units():
     style = styles.Style(units="celsius")
     assert style.units == "$°C$"

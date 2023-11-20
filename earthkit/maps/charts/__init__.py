@@ -16,6 +16,7 @@ import itertools
 
 import earthkit.data
 import matplotlib.pyplot as plt
+import numpy as np
 
 from earthkit.maps import domains, utils
 from earthkit.maps.charts import layouts
@@ -173,9 +174,11 @@ class Chart:
 
     def expand_rows_cols(method):
         def wrapper(self, data, *args, **kwargs):
-            if not isinstance(data, (earthkit.data.core.Base, list)):
+            if not isinstance(data, (earthkit.data.core.Base, list, np.ndarray)):
                 data = earthkit.data.from_object(data)
-            if not hasattr(data, "__len__"):
+            if not isinstance(data, earthkit.data.core.Base) or not hasattr(
+                data, "__len__"
+            ):
                 data = [data]
 
             if not self.subplots:
