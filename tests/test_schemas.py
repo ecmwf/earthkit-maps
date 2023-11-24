@@ -70,11 +70,11 @@ def test_Schema_recursive_update():
 
 def test_Schema_use():
     schema = schemas.Schema(
-        force_style_units=False,
+        use_preferred_styles=False,
     )
 
-    assert schema.force_style_units is False
+    assert schema.use_preferred_styles is False
 
     schema.use("ecmwf")
 
-    assert schema.force_style_units is True
+    assert schema.use_preferred_styles is True

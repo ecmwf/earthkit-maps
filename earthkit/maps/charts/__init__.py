@@ -46,7 +46,7 @@ class Chart:
         obj._gridspec = gridspec
         return obj
 
-    def __init__(self, domain=None, crs=None, rows=None, cols=None):
+    def __init__(self, domain=None, crs=None, rows=None, columns=None):
 
         self._domain = domain
         self._crs = crs
@@ -57,7 +57,7 @@ class Chart:
         self._gridspec = None
 
         self._rows = rows
-        self._cols = cols
+        self._columns = columns
 
         self.subplots = []
         self._subplots_generator = None
@@ -92,19 +92,19 @@ class Chart:
             if len(self) == 0:
                 raise ValueError("cannot get rows from empty figure")
             self._rows = layouts.rows_cols(
-                len(self), cols=self._cols, max_cols=self.MAX_COLS
+                len(self), cols=self._columns, max_cols=self.MAX_COLS
             )[0]
         return self._rows
 
     @property
     def cols(self):
-        if self._cols is None:
+        if self._columns is None:
             if len(self) == 0:
                 raise ValueError("cannot get cols from empty figure")
-            self._cols = layouts.rows_cols(
+            self._columns = layouts.rows_cols(
                 len(self), rows=self._rows, max_cols=self.MAX_COLS
             )[1]
-        return self._cols
+        return self._columns
 
     @property
     def shape(self):
@@ -183,10 +183,10 @@ class Chart:
 
             if not self.subplots:
                 num_subplots = len(data)
-                self._rows, self._cols = layouts.rows_cols(
+                self._rows, self._columns = layouts.rows_cols(
                     num_subplots,
                     rows=self._rows,
-                    cols=self._cols,
+                    cols=self._columns,
                     max_cols=self.MAX_COLS,
                 )
 
@@ -253,7 +253,7 @@ class Chart:
 
     def polygons(self, *args, **kwargs):
         if not self.subplots:
-            self._rows, self._cols = (1, 1)
+            self._rows, self._columns = (1, 1)
             self.add_subplot()
         [subplot.polygons(*args, **kwargs) for subplot in self.subplots]
 
@@ -300,6 +300,9 @@ class Chart:
     @schema.legend.apply()
     def legend(self, *args, location=None, **kwargs):
         legends = []
+
+        anchor = None
+        non_cbar_layers = []
         for i, layer in enumerate(self.distinct_legend_layers):
             if isinstance(location, (list, tuple)):
                 loc = location[i]
@@ -312,9 +315,17 @@ class Chart:
                     location=loc,
                     **kwargs,
                 )
+            if legend.__class__.__name__ != "Colorbar":
+                non_cbar_layers.append(layer)
+            else:
+                anchor = layer.axes[0].get_anchor()
             legends.append(legend)
-        if len(legends) == 1:
-            legends = legends[0]
+
+        if anchor is not None:
+            for layer in non_cbar_layers:
+                for ax in layer.axes:
+                    ax.set_anchor(anchor)
+
         return legends
 
     @defer
@@ -334,6 +345,7 @@ class Chart:
     def _default_title_template(self):
         return self.subplots[0]._default_title_template
 
+    @defer
     @schema.title.apply()
     def title(self, label=None, unique=True, grouped=True, y=None, **kwargs):
         """
@@ -380,6 +392,7 @@ class Chart:
         self.fig.canvas.draw()
         return self.fig.suptitle(label, y=y, **kwargs)
 
+    @defer
     def subplot_titles(self, *args, **kwargs):
         if args and isinstance(args[0], (list, tuple)):
             items = args[0]
@@ -393,7 +406,7 @@ class Chart:
     def show(self, *args, **kwargs):
         """Display the chart."""
         if len(self) == 0:
-            self._rows, self._cols = (1, 1)
+            self._rows, self._columns = (1, 1)
             self.add_subplot()
         self._release_queue()
         plt.show(*args, **kwargs)
@@ -401,7 +414,7 @@ class Chart:
     def save(self, *args, bbox_inches="tight", **kwargs):
         """Save the chart."""
         if len(self) == 0:
-            self._rows, self._cols = (1, 1)
+            self._rows, self._columns = (1, 1)
             self.add_subplot()
         self._release_queue()
         return plt.savefig(*args, bbox_inches=bbox_inches, **kwargs)

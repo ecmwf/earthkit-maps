@@ -17,13 +17,15 @@ import warnings
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from earthkit.maps import metadata, schema, styles
-from earthkit.maps.styles import colors, legends, levels
+from earthkit.maps import metadata, styles
+from earthkit.maps.schemas import schema
+from earthkit.maps.styles import auto, colors, legends, levels
 
 __all__ = [
     "colors",
     "legends",
     "levels",
+    "auto",
 ]
 
 
@@ -66,8 +68,11 @@ class Style:
     """
 
     @classmethod
-    def from_yaml(cls, yaml_file):
-        pass
+    def from_dict(cls, kwargs):
+        style_type = kwargs.pop("type")
+        if "levels" in kwargs:
+            kwargs["levels"] = levels.Levels.from_config(kwargs["levels"])
+        return getattr(styles, style_type)(**kwargs)
 
     @classmethod
     def from_magics_style(cls, magics_style):
@@ -75,7 +80,7 @@ class Style:
 
     def __init__(
         self,
-        colors=schema.cmap,
+        colors=None,
         levels=None,
         normalize=True,
         units=None,
@@ -86,7 +91,7 @@ class Style:
         ticks=None,
         **kwargs,
     ):
-        self._colors = colors
+        self._colors = colors or schema.cmap
         self._levels = (
             levels
             if isinstance(levels, styles.levels.Levels)
@@ -105,6 +110,9 @@ class Style:
         self._units_label = units_label
 
         self._legend_style = legend_style
+        if self._legend_style == "None":
+            self._legend_style = None
+
         self._bin_labels = bin_labels
         self._legend_kwargs = legend_kwargs or dict()
         if ticks is not None:
@@ -389,7 +397,9 @@ class Style:
     def disjoint(self, *args, **kwargs):
         return styles.legends.disjoint(*args, **kwargs)
 
-    def save_legend_graphic(self, filename="legend.png", data=None, **kwargs):
+    def save_legend_graphic(
+        self, filename="legend.png", data=None, transparent=True, **kwargs
+    ):
         """
         Save a standalone image of the legend associated with this `Style`.
 
@@ -416,18 +426,18 @@ class Style:
 
         try:
             getattr(self, f"_save_{self._legend_style}_graphic")(
-                data, x, y, filename, kwargs
+                data, x, y, filename, transparent, kwargs
             )
         finally:
             mpl.use(backend)
 
-    def _save_colorbar_graphic(self, data, x, y, filename, kwargs):
+    def _save_colorbar_graphic(self, data, x, y, filename, transparent, kwargs):
         from earthkit.maps import Chart
 
         chart = Chart()
         chart.contourf(data, x=x, y=y, style=self)
 
-        legend = chart.legend(**kwargs)
+        legend = chart.legend(**kwargs)[0]
 
         chart.fig.canvas.draw()
         bbox = legend.ax.get_window_extent().transformed(
@@ -449,23 +459,22 @@ class Style:
         bbox.y0 = min(bbox.y0, title_bbox.y0) - y * ymod
         bbox.y1 = max(bbox.y1, title_bbox.y1) + y * ymod
 
-        plt.savefig(filename, dpi="figure", bbox_inches=bbox)
+        plt.savefig(filename, dpi="figure", bbox_inches=bbox, transparent=transparent)
 
-    def _save_disjoint_graphic(self, data, x, y, filename, kwargs):
+    def _save_disjoint_graphic(self, data, x, y, filename, transparent, kwargs):
         from earthkit.maps import Chart
 
         chart = Chart()
         chart.contourf(data, x=x, y=y, style=self)
 
-        legend = chart.legend(**kwargs)
+        legend = chart.legend(**kwargs)[0]
 
         chart.fig.canvas.draw()
         fig = legend.figure
         fig.canvas.draw()
         bbox = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-        fig.savefig(filename, dpi="figure", bbox_inches=bbox)
 
-        plt.savefig(filename, dpi="figure", bbox_inches=bbox)
+        plt.savefig(filename, dpi="figure", bbox_inches=bbox, transparent=transparent)
 
 
 class Contour(Style):
@@ -587,5 +596,4 @@ class Hatched(Contour):
         return legend
 
 
-def auto(data, units=None):
-    return Style(colors=schema.cmap)
+DEFAULT_STYLE = Style()

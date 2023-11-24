@@ -16,7 +16,8 @@ import cartopy.crs as ccrs
 import earthkit.data
 import numpy as np
 
-from earthkit.maps import schema, styles
+from earthkit.maps import styles
+from earthkit.maps.schemas import schema
 
 
 class Input:
@@ -82,9 +83,9 @@ class Input:
     def style(self):
         if self._style is None:
             style_units = None
-            if not schema.force_style_units:
+            if not schema.use_preferred_styles:
                 style_units = self._kwargs.pop("units", None) or self.source_units
-            self._style = styles.auto(self.data, units=style_units)
+            self._style = styles.auto.guess_style(self.data, units=style_units)
         return self._style
 
     @property

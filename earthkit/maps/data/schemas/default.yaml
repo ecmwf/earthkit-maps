@@ -6,7 +6,7 @@ figsize: [9, 7.5]
 dpi: 100
 extract_domain: true
 style_library: default
-force_style_units: false
+use_preferred_styles: false
 
 # Projections and interpolation
 reference_crs: PlateCarree
@@ -44,7 +44,6 @@ borders:
   linestyle: "--"
   linewidth: 0.5
   edgecolor: [0.2, 0.2, 0.2]
-  facecolor: "none"
 roads:
   linestyle: "-"
   linewidth: 0.5

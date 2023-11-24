@@ -129,20 +129,9 @@ class Domain:
         #     return f"the {self.domain_name}"
         if self.domain_name is None:
             if self.bounds is None:
-                string = "custom domain"
+                string = "None"
             else:
-                ordinal_values = []
-                for lon in self.latlon_bounds[:2]:
-                    direction = ""
-                    if lon != 0:
-                        direction = "°W" if lon > 0 else "°E"
-                    ordinal_values.append(f"{round(abs(lon), 2)}{direction}")
-                for lat in self.latlon_bounds[2:]:
-                    direction = ""
-                    if lat != 0:
-                        direction = "°N" if lat > 0 else "°S"
-                    ordinal_values.append(f"{round(abs(lat), 2)}{direction}")
-                string = ", ".join(ordinal_values)
+                string = domains.bounds.to_string(self.latlon_bounds)
             return string
         return self.domain_name
 

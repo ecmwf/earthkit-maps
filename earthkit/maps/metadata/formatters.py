@@ -27,7 +27,7 @@ class BaseFormatter(Formatter):
 
     #: Attributes of subplots which can be extracted by format strings
     SUBPLOT_ATTRIBUTES = {
-        "domain": "domain",
+        "domain": "domain_name",
         "crs": "crs_name",
     }
 
@@ -105,9 +105,12 @@ class SubplotFormatter(BaseFormatter):
             return f(value, conversion)
 
     def format_key(self, key):
-        values = [
-            LayerFormatter(layer).format_key(key) for layer in self.subplot.layers
-        ]
+        if key in self.SUBPLOT_ATTRIBUTES:
+            values = [getattr(self.subplot, self.SUBPLOT_ATTRIBUTES[key])]
+        else:
+            values = [
+                LayerFormatter(layer).format_key(key) for layer in self.subplot.layers
+            ]
         return values
 
     def format_field(self, value, format_spec):

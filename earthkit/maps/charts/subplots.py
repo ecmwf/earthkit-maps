@@ -16,10 +16,11 @@ import cartopy.feature as cfeature
 import earthkit.data
 import matplotlib.pyplot as plt
 
-from earthkit.maps import domains, inputs, schema, utils
+from earthkit.maps import domains, inputs, utils
 from earthkit.maps.charts.layers import Layer
 from earthkit.maps.domains import natural_earth
 from earthkit.maps.metadata.formatters import LayerFormatter, SubplotFormatter
+from earthkit.maps.schemas import schema
 
 
 class Subplot:
@@ -53,6 +54,22 @@ class Subplot:
     @property
     def fig(self):
         return self.chart.fig
+
+    @property
+    def crs_name(self):
+        return self.domain.crs.__class__.__name__
+
+    @property
+    def domain_name(self):
+        name = self.domain.title
+        if name == "None":
+            if self.domain.crs.__class__.__name__ == "PlateCarree":
+                extent = self.ax.get_extent()
+                if extent == (-180.0, 180.0, -90.0, 90.0):
+                    name = "Global"
+                else:
+                    name = domains.bounds.to_string(extent)
+        return name
 
     @property
     def distinct_legend_layers(self):
@@ -193,6 +210,8 @@ class Subplot:
             feature = cfeature.NaturalEarthFeature(
                 "cultural", "admin_0_countries", resolution
             )
+        if "color" in kwargs:
+            kwargs["edgecolor"] = kwargs.pop("color")
         return self.ax.add_feature(feature, *args, **kwargs)
 
     @schema.land.apply()
@@ -226,7 +245,7 @@ class Subplot:
         if resolution == "auto":
             feature = cfeature.OCEAN
         else:
-            feature = cfeature.NaturalEarthFeature("physical", "land", resolution)
+            feature = cfeature.NaturalEarthFeature("physical", "ocean", resolution)
         return self.ax.add_feature(feature, *args, **kwargs)
 
     def stock_img(self, *args, **kwargs):

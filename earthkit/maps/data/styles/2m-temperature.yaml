@@ -1,4 +1,5 @@
 id: 2m-temperature
+preferred-style: temperature_at_2m_in_celsius
 
 criteria:
 - {paramId: 167, shortName: 2t}
@@ -25,7 +26,7 @@ styles:
     colors: turbo
     extend: both
     levels: range(230, 311, 2)
-    units: kelvin
+    units: K
 
   temperature_at_2m_in_fahrenheit:
     type: Contour

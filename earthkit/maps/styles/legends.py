@@ -98,6 +98,8 @@ def disjoint(layer, *args, location="bottom", frameon=False, **kwargs):
 
     artists, labels = layer.mappable.legend_elements()
 
+    kwargs["ncols"] = kwargs.get("ncols", min(6, len(artists)))
+
     labels = kwargs.pop("labels", layer.style._bin_labels) or labels
     legend = source.legend(
         artists,

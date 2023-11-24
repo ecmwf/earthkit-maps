@@ -28,6 +28,8 @@ def test_step_range():
     assert levels.step_range([3], step=4) == [0, 4]
     assert levels.step_range([2], step=4, reference=3) == [-1, 3]
 
+    assert levels.step_range([3.2], step=0.5) == [3, 3.5]
+
     assert levels.step_range([1, 3, 7], step=4) == [0, 4, 8]
     assert levels.step_range([1, 3, 7], step=4, reference=2) == [-2, 2, 6, 10]
 

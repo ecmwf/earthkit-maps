@@ -140,6 +140,19 @@ class Levels:
         such as anomalies.
     """
 
+    @classmethod
+    def from_config(cls, config):
+        if isinstance(config, str):
+            if config.startswith("range"):
+                args = (
+                    int(i)
+                    for i in config.replace("range(", "").replace(")", "").split(",")
+                )
+                kwargs = {"levels": range(*args)}
+        else:
+            kwargs = config
+        return cls(**kwargs)
+
     def __init__(
         self,
         levels=None,
