@@ -24,6 +24,12 @@ visualisations to suit your needs.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Documentation
+
+   api
+
+.. toctree::
+   :maxdepth: 1
    :caption: Installation
 
    install
