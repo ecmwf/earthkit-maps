@@ -39,17 +39,19 @@ extensions = [
 autodoc_typehints = "none"
 
 # autoapi configuration
-# autoapi_dirs = ["../earthkit/maps"]
-# autoapi_ignore = ["*/version.py"]
-# autoapi_options = [
-#     "members",
-#     "inherited-members",
-#     "undoc-members",
-#     "show-inheritance",
-#     "show-module-summary",
-#     "imported-members",
-# ]
-# autoapi_root = "_api"
+autoapi_dirs = ["../earthkit/maps"]
+autoapi_ignore = ["*/version.py", "sphinxext/*", "*/data/*"]
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
+    "inherited-members",
+]
+autoapi_root = "_api"
+autoapi_member_order = "alphabetical"
+autoapi_add_toctree_entry = False
 
 # napoleon configuration
 # napoleon_google_docstring = False
