@@ -33,8 +33,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "autoapi.extension",
-    "earthkit.data.sphinxext.xref",
-    "earthkit.data.sphinxext.module_output",
 ]
 
 # autodoc configuration
