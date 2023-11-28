@@ -15,6 +15,7 @@
 import cartopy.crs as ccrs
 import earthkit.data
 import numpy as np
+from cartopy.util import add_cyclic_point
 
 from earthkit.maps import styles
 from earthkit.maps.schemas import schema
@@ -112,3 +113,8 @@ class Input:
                 self._values = self.data.values()
             except AttributeError:
                 self._values = self.data
+
+        if np.all(self.x[:-1] == self.x[1:]):
+            self.y = self.y[:, 0]
+            self._values, self.x = add_cyclic_point(self._values, coord=self.x[0])
+            self.x, self.y = np.meshgrid(self.x, self.y)
