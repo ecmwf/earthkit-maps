@@ -82,6 +82,7 @@ class Style:
         self,
         colors=None,
         levels=None,
+        gradients=None,
         normalize=True,
         units=None,
         units_label=None,
@@ -98,6 +99,7 @@ class Style:
             else styles.levels.Levels(levels)
         )
         self.normalize = normalize
+        self.gradients = gradients
 
         if units is not None and metadata.units._NO_CF_UNITS:
             warnings.warn(
@@ -196,6 +198,19 @@ class Style:
             The data to be plotted using this `Style`.
         """
         levels = self.levels(data)
+
+        if self.gradients is not None:
+            self._legend_kwargs.setdefault(
+                "ticks", None
+            )  # Let matplotlib auto-generate ticks
+            return colors.gradients(
+                levels,
+                self._colors,
+                self.gradients,
+                self.normalize,
+                **self._kwargs,
+            )
+
         cmap, norm = styles.colors.cmap_and_norm(
             self._colors,
             levels,
