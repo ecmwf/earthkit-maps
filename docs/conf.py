@@ -51,7 +51,7 @@ autoapi_options = [
 ]
 autoapi_root = "_api"
 autoapi_member_order = "alphabetical"
-autoapi_add_toctree_entry = False
+autoapi_add_toctree_entry = True
 
 # napoleon configuration
 # napoleon_google_docstring = False
