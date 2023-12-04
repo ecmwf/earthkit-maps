@@ -17,19 +17,21 @@ import numpy as np
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
 
 
-def expand(colors, levels):
+def expand(colors, levels, extend_colors=0):
     """
     Generate a list of colours from a matplotlib colormap name and some levels.
     """
+    length = len(levels) + extend_colors
+
     if isinstance(colors, (list, tuple)) and len(colors) == 1:
-        colors *= len(levels) - 1
+        colors *= length - 1
     if isinstance(colors, str):
         try:
             cmap = mpl.colormaps[colors]
         except KeyError:
-            colors = [colors] * (len(levels) - 1)
+            colors = [colors] * (length - 1)
         else:
-            colors = [cmap(i) for i in np.linspace(0, 1, len(levels))]
+            colors = [cmap(i) for i in np.linspace(0, 1, length)]
     return colors
 
 
@@ -39,12 +41,24 @@ def contour_line_colors(colors, levels):
     return cmap
 
 
-def cmap_and_norm(colors, levels, normalize=True):
-    colors = expand(colors, levels)
+def cmap_and_norm(colors, levels, normalize=True, extend=None):
+    levels = list(levels)
+    extend_colors = 0
+    if extend == "both":
+        extend_colors = 2
+        levels = [-np.inf] + levels + [np.inf]
+    elif extend == "max":
+        levels += [np.inf]
+        extend_colors = 1
+    elif extend == "min":
+        levels = [-np.inf] + levels
+        extend_colors = 1
+
+    colors = expand(colors, levels, extend_colors)
     cmap = LinearSegmentedColormap.from_list(
         name="",
         colors=colors,
-        N=len(levels),
+        N=len(levels) + extend_colors,
     )
 
     norm = None

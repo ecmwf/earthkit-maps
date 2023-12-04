@@ -39,7 +39,7 @@ def quickplot(*data, blueprint=DEFAULT_BLUEPRINT, units=None, style=None, **kwar
         units = [None] * len(data)
 
     for item, unit in zip(data, units):
-        chart.plot(item, style=style)
+        chart.plot(item, style=style, units=unit)
 
     for method, method_kwargs in blueprint.items():
         getattr(chart, method)(**method_kwargs)

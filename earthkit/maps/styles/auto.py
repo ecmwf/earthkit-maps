@@ -45,6 +45,7 @@ def guess_style(data, units=None):
             if are_equal(style.get("units"), units):
                 break
         else:
-            raise ValueError(f"{config['id']} has no styles with units {units}")
+            # No style matching units found; return default
+            return styles.Style(units=units)
 
     return styles.Style.from_dict(style)

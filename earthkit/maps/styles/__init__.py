@@ -47,6 +47,9 @@ class Style:
         The levels to use in this `Style`. This can be a list of specific
         levels, or an earthkit `Levels` object. If not provided, some suitable
         levels will be generated automatically (experimental!).
+    gradients : list, optional
+        The number of colors to insert between each level in `levels`. If None,
+        one color level will be inserted between each level.
     normalize : bool, optional
         If `True` (default), then the colors will be normalized over the level
         range.
@@ -152,6 +155,11 @@ class Style:
         return self._levels.apply(data)
 
     @property
+    def extend(self):
+        """Convenience access to 'extend' kwarg."""
+        return self._kwargs.get("extend")
+
+    @property
     def units(self):
         """Formatted units for use in figure text."""
         if self._units_label is not None:
@@ -215,6 +223,7 @@ class Style:
             self._colors,
             levels,
             self.normalize,
+            self.extend,
         )
 
         return {
@@ -524,6 +533,7 @@ class Contour(Style):
             self._line_colors,
             levels,
             self.normalize,
+            self.extend,
         )
 
         return {

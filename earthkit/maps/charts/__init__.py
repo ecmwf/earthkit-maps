@@ -28,12 +28,16 @@ from earthkit.maps.schemas import schema
 
 class Chart:
 
+    """
+    The top-level container for all plot elements.
+    """
+
     MAX_COLS = 8
 
     @classmethod
     def from_gridspec(cls, gridspec, *args, **kwargs):
         """
-        Instantiate an earthkit Superplot from a matplotlib gridspec.
+        Instantiate an earthkit Chart from a matplotlib gridspec.
 
         Parameters
         ----------
@@ -74,6 +78,7 @@ class Chart:
 
     @property
     def fig(self):
+        """The `Chart`'s underlying matplotlib `Figure` object."""
         if self._fig is None:
             self._fig = plt.figure(
                 figsize=schema.figsize, constrained_layout=True, dpi=schema.dpi
@@ -82,12 +87,14 @@ class Chart:
 
     @property
     def gridspec(self):
+        """The `Chart`'s underlying matplotlib `GridSpec` object."""
         if self._gridspec is None:
             self._gridspec = self.fig.add_gridspec(*self.shape)
         return self._gridspec
 
     @property
     def rows(self):
+        """The number of rows in the `Chart`'s subplot layout."""
         if self._rows is None:
             if len(self) == 0:
                 raise ValueError("cannot get rows from empty figure")
@@ -98,6 +105,7 @@ class Chart:
 
     @property
     def cols(self):
+        """The number of columns in the `Chart`'s subplot layout."""
         if self._columns is None:
             if len(self) == 0:
                 raise ValueError("cannot get cols from empty figure")
@@ -108,6 +116,7 @@ class Chart:
 
     @property
     def shape(self):
+        """The shape of the `Chart`'s subplot layout."""
         return self.rows, self.cols
 
     @property
@@ -123,6 +132,9 @@ class Chart:
         return self._subplots_generator
 
     def add_subplot(self, *args, data=None, domain=None, crs=None, **kwargs):
+        """
+        Add a subplot within the `Chart`'s subplot layout.
+        """
         row, col = next(self.subplots_generator)
 
         if domain is None and crs is None:
@@ -161,7 +173,7 @@ class Chart:
 
         return groups
 
-    def defer(method):
+    def _defer(method):
         """Defer a method's execution until this superplot has subplots."""
 
         def wrapper(self, *args, **kwargs):
@@ -204,6 +216,9 @@ class Chart:
         return wrapper
 
     def plot(self, data, *args, **kwargs):
+        """
+        Plot some data on this `Chart`.
+        """
         if data.__class__.__name__ in ("DataFrame", "Series"):
             raise NotImplementedError(
                 "Plotting pandas DataFrames and Series is an upcoming feature"
@@ -257,27 +272,27 @@ class Chart:
             self.add_subplot()
         [subplot.polygons(*args, **kwargs) for subplot in self.subplots]
 
-    @defer
+    @_defer
     def coastlines(self, *args, **kwargs):
         return [subplot.coastlines(*args, **kwargs) for subplot in self.subplots]
 
-    @defer
+    @_defer
     def borders(self, *args, **kwargs):
         return [subplot.borders(*args, **kwargs) for subplot in self.subplots]
 
-    @defer
+    @_defer
     def land(self, *args, **kwargs):
         return [subplot.land(*args, **kwargs) for subplot in self.subplots]
 
-    @defer
+    @_defer
     def ocean(self, *args, **kwargs):
         return [subplot.ocean(*args, **kwargs) for subplot in self.subplots]
 
-    @defer
+    @_defer
     def stock_img(self, *args, **kwargs):
         return [subplot.stock_img(*args, **kwargs) for subplot in self.subplots]
 
-    @defer
+    @_defer
     def gridlines(self, *args, **kwargs):
         return [subplot.gridlines(*args, **kwargs) for subplot in self.subplots]
 
@@ -328,7 +343,7 @@ class Chart:
 
         return legends
 
-    @defer
+    @_defer
     def add_geometries(self, *args, **kwargs):
         """
         Plot geometries on all subplots.
@@ -345,7 +360,7 @@ class Chart:
     def _default_title_template(self):
         return self.subplots[0]._default_title_template
 
-    @defer
+    @_defer
     @schema.title.apply()
     def title(self, label=None, unique=True, grouped=True, y=None, **kwargs):
         """
@@ -392,7 +407,7 @@ class Chart:
         self.fig.canvas.draw()
         return self.fig.suptitle(label, y=y, **kwargs)
 
-    @defer
+    @_defer
     def subplot_titles(self, *args, **kwargs):
         if args and isinstance(args[0], (list, tuple)):
             items = args[0]

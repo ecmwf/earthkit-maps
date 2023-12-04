@@ -20,6 +20,12 @@ from cartopy.util import add_cyclic_point
 from earthkit.maps import styles
 from earthkit.maps.schemas import schema
 
+_NO_EARTHKIT_REGRID = False
+try:
+    import earthkit.regrid
+except ImportError:
+    _NO_EARTHKIT_REGRID = True
+
 
 class Input:
     """
@@ -97,17 +103,48 @@ class Input:
             self.short_name,
         )
 
+    @property
+    def gridspec(self):
+        if self.data.metadata("gridType", default="") == "reduced_gg":
+            n = self.data.metadata("N", default=None)
+            if n is not None:
+                if self.data.metadata("isOctahedral", default=0):
+                    g = f"O{n}"
+                else:
+                    g = f"N{n}"
+            return {"grid": g}
+
     def extract_scalar(self, domain=None):
         if self.x is None and self.y is None:
 
-            if domain is None:
-                self._values = self.data.to_numpy(flatten=False)
-                points = self.data.to_points(flatten=False)
+            if self.gridspec is not None:
+                if _NO_EARTHKIT_REGRID:
+                    raise ImportError(
+                        f"earthkit-regrid is required for plotting data on a"
+                        f"'{self.gridspec['grid']}' grid"
+                    )
+                points = get_points(schema.interpolate_target_resolution)
+                self._values = earthkit.regrid.interpolate(
+                    self.data.values,
+                    self.gridspec,
+                    {
+                        "grid": [
+                            schema.interpolate_target_resolution,
+                            schema.interpolate_target_resolution,
+                        ],
+                    },
+                )
+                if domain is not None:
+                    self._values, points = domain.latlon_bbox(self._values, points)
             else:
-                self._values, points = domain.bbox(self.data)
-
+                if domain is None:
+                    self._values = self.data.to_numpy(flatten=False)
+                    points = self.data.to_points(flatten=False)
+                else:
+                    self._values, points = domain.bbox(self.data)
             self.y = points["y"]
             self.x = points["x"]
+
         elif self._values is None:
             try:
                 self._values = self.data.values()
@@ -118,3 +155,12 @@ class Input:
             self.y = self.y[:, 0]
             self._values, self.x = add_cyclic_point(self._values, coord=self.x[0])
             self.x, self.y = np.meshgrid(self.x, self.y)
+
+
+def get_points(dx):
+    import numpy as np
+
+    lat_v = np.linspace(90, -90, int(180 / dx) + 1)
+    lon_v = np.linspace(0, 360 - dx, int(360 / dx))
+    lon, lat = np.meshgrid(lon_v, lat_v)
+    return {"x": lon, "y": lat}

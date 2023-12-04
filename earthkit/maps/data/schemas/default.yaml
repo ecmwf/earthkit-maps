@@ -7,6 +7,7 @@ dpi: 100
 extract_domain: true
 style_library: default
 use_preferred_styles: false
+interpolate_target_resolution: 1
 
 # Projections and interpolation
 reference_crs: PlateCarree

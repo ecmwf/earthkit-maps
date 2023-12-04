@@ -139,16 +139,13 @@ class Domain:
     def latlon_bounds(self):
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
 
-    def bbox(self, field):
+    def latlon_bbox(self, values, points):
+        source_crs = ccrs.PlateCarree()
+
+        return self._extract_bbox(values, points, source_crs)
+
+    def _extract_bbox(self, values, points, source_crs):
         from earthkit.maps.schemas import schema
-
-        try:
-            source_crs = field.projection().to_cartopy_crs()
-        except AttributeError:
-            source_crs = ccrs.PlateCarree()
-
-        points = field.to_points(flatten=False)
-        values = field.to_numpy(flatten=False)
 
         if self.bounds and schema.extract_domain:
             try:
@@ -215,6 +212,18 @@ class Domain:
                         values = values[bbox].reshape(shape)
 
         return values, points
+
+    def bbox(self, field):
+
+        try:
+            source_crs = field.projection().to_cartopy_crs()
+        except AttributeError:
+            source_crs = ccrs.PlateCarree()
+
+        points = field.to_points(flatten=False)
+        values = field.to_numpy(flatten=False)
+
+        return self._extract_bbox(values, points, source_crs)
 
 
 def lookup_name(domain_name):

@@ -124,6 +124,7 @@ class Subplot:
 
             kwargs.pop("x", None)
             kwargs.pop("y", None)
+            kwargs.pop("units", None)
 
             if transform_first is None:
                 transform_first = self._can_transform_first(method)
