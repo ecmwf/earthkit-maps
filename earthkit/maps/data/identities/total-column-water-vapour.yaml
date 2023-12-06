@@ -6,3 +6,6 @@ criteria:
 - {long_name: Total Column Water Vapour}
 - {long_name: Total column water vapour}
 - {long_name: Total column vertically-integrated water vapour}
+- {standard_name: precwtr}
+- {long_name: precipitable water}
+- {stash_code: 409}
