@@ -26,7 +26,15 @@ visualisations to suit your needs.
    :maxdepth: 1
    :caption: Documentation
 
-   api
+   _api/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+   :titlesonly:
+
+   user-guide
+   examples/gallery/gallery.ipynb
 
 .. toctree::
    :maxdepth: 1
