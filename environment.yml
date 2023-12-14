@@ -19,6 +19,3 @@ dependencies:
 - cartopy
 - pyyaml
 - numpy
-- xarray
-- cf-units
-- scipy
