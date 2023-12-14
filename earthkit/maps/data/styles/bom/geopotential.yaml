@@ -1,0 +1,35 @@
+# Copyright 2023, Australian Bureau of Meteorology
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+id: geopotential
+preferred-style: geopotential_height_in_dam
+
+criteria:
+- {paramId: 129}
+- {shortName: z}
+- {levelist: ["500"]}
+- {standard_name: geopotential}
+- {long_name: Geopotential}
+
+styles:
+
+  geopotential_height_in_dam:
+    type: Contour
+    line_colors: black
+    linewidths: [0.5, 0.5, 0.5, 1]
+    levels:
+      step: 5
+    labels: true
+    units_label: dam
+    legend_type: None

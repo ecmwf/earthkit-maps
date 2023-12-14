@@ -1,4 +1,4 @@
-# Copyright 2023, European Centre for Medium Range Weather Forecasts.
+# Copyright 2023, Australian Bureau of Meteorology
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ styles:
     - [0, 0, 0.5]
     - [0, 0, 0.5]
     - [0, 0, 0.5]
-    - [0, 0, 0.5]
     - [0, 0, 0.85]
     - [0.25, 0, 1]
     - [0.5, 0, 1]
@@ -55,10 +54,10 @@ styles:
     - [1, 0.3087, 0]
     - [1, 0.1464, 0]
     - [1, 0.0381, 0]
-    - [1, 0, 0]
-    - [1, 0, 1]
-    - [1, 0, 1]
-    - [1, 0, 1]
+    - [0.9, 0, 0]
+    - [0.7, 0, 0]
+    - [0.4, 0, 0]
+    - [0.2, 0, 0]
     - [1, 0, 1]
     - [1, 0, 1]
     levels: range(-48, 57, 4)
