@@ -53,10 +53,19 @@ def suggest_style(data, units=None):
     else:
         return styles.DEFAULT_STYLE
 
-    style_config_file = (
-        definitions.DATA_DIR / "styles" / schema.style_library / f"{config['id']}.yaml"
-    )
-    if not os.path.exists(str(style_config_file)):
+    style_config_file = None
+    style_library = None
+
+    for location in [schema.style_library, 'default']:
+        temp_style_config_file = (
+            definitions.DATA_DIR / "styles" / location / f"{config['id']}.yaml"
+        )
+        if os.path.exists(str(temp_style_config_file)):
+            style_config_file = temp_style_config_file
+            style_library = location
+            break
+
+    if style_config_file is None:
         return styles.DEFAULT_STYLE
 
     with open(style_config_file, "r") as f:
@@ -73,9 +82,9 @@ def suggest_style(data, units=None):
 
     module, style = style.split(".")
 
-    if schema.style_library != "default":
+    if style_library != "default":
         module = importlib.import_module(
-            f"earthkit.maps.styles.{schema.style_library}.{module}"
+            f"earthkit.maps.styles.{style_library}.{module}"
         )
     else:
         module = importlib.import_module(f"earthkit.maps.styles.{module}")
