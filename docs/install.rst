@@ -25,5 +25,5 @@ additional dependencies.
 - `SciPy <https://scipy.org/install/>`_: required for efficiently extracting
   sub-domains from data to speed up plotting.
 - `cf-units <https://github.com/SciTools/cf-units>`_: required for advanced
-   units features, including automatic unit conversion for styles with units
-   attached.
+  units features, including automatic unit conversion for styles with units
+  attached.
