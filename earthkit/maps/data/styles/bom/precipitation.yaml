@@ -1,0 +1,5 @@
+styles:
+  default: precipitation.PRECIPITATION_IN_MM
+  units:
+    m: precipitation.PRECIPITATION_IN_M
+    mm: precipitation.PRECIPITATION_IN_MM
