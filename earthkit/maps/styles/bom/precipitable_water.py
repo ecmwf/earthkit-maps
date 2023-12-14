@@ -14,7 +14,6 @@
 
 from earthkit.maps import styles
 
-
 PRECIPITABLE_WATER_IN_MM = styles.Contour(
     colors=[
         (0.263, 0.224, 0.125),
@@ -78,11 +77,10 @@ PRECIPITABLE_WATER_IN_MM = styles.Contour(
         (0.949, 0.906, 0.812),
         (0.965, 0.941, 0.843),
         (1.0, 0.333, 1.0),
-        (1.0, 0.333, 1.0) 
+        (1.0, 0.333, 1.0),
     ],
     levels=range(0, 80, 2),
     extend="max",
     # units="mm",
     conversion=lambda x: x,
-
 )
