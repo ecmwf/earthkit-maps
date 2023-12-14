@@ -13,9 +13,9 @@ dependencies:
 - sphinx-autoapi
 # DO NOT EDIT ABOVE THIS LINE, ADD DEPENDENCIES BELOW
 - earthkit-data
-- pandas
-- geopandas
 - matplotlib
 - cartopy
 - pyyaml
 - numpy
+- pip:
+  - adjustText
