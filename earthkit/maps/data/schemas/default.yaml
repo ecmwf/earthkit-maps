@@ -2,11 +2,12 @@
 font: Open Sans
 cmap: magma
 n_levels: 8
-figsize: [10, 7.5]
+figsize: [9, 7.5]
 dpi: 100
 extract_domain: true
 style_library: default
-force_style_units: false
+use_preferred_styles: false
+interpolate_target_resolution: 1
 
 # Projections and interpolation
 reference_crs: PlateCarree
@@ -44,7 +45,11 @@ borders:
   linestyle: "--"
   linewidth: 0.5
   edgecolor: [0.2, 0.2, 0.2]
-  facecolor: "none"
+states_provinces:
+  resolution: "high"
+  linestyle: ":"
+  linewidth: 0.5
+  edgecolor: [0.2, 0.2, 0.2]
 roads:
   linestyle: "-"
   linewidth: 0.5
@@ -53,11 +58,17 @@ roads:
   facecolor: "none"
 land:
   color: "#E0CBA8"
+urban_areas:
+  color: "#bb8d44"
 ocean:
-  color: "#C3EDFF"
-states_provinces:
-  linestyle: ":"
-  linewidth: 0.5
+  color: "#97B6E1"
+rivers:
+  edgecolor: "#97B6E1"
+lakes:
+  facecolor: "#A5D5F2"
+  edgecolor: "#97B6E1"
+shapes:
+  facecolor: none
 gridlines:
   linewidth: 0.75
   linestyle: ":"

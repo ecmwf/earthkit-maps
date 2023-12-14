@@ -25,17 +25,18 @@ import os
 
 from matplotlib import font_manager, rcParams
 
-from earthkit.maps import shapes, styles
+from earthkit.maps.charts import Chart
 from earthkit.maps.definitions import FONTS_DIR
-from earthkit.maps.layers.superplots import Superplot
 from earthkit.maps.quickplot import quickplot
-from earthkit.maps.schemas import schema
+from earthkit.maps.styles import Style
+
+from earthkit.maps.schemas import schema  # isort:skip
+
 
 __all__ = [
+    "Chart",
+    "Style",
     "quickplot",
-    "shapes",
-    "styles",
-    "Superplot",
     "schema",
 ]
 

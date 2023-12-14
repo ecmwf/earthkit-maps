@@ -156,7 +156,7 @@ class Schema(dict):
         Parameters
         ----------
         name : str
-            The name of the schema to use, or path to 
+            The name of the schema to use, or path to
             user implemented schema.
 
         Example

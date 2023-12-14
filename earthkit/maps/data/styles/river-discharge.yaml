@@ -1,0 +1,15 @@
+id: river-discharge
+preferred-style:
+
+criteria:
+- {long_name: Mean discharge in the last 6 hours}
+- {name: dis06}
+
+styles:
+
+  river_discharge_over_6_hours_in_m3_per_s:
+    type: Contour
+    colors: Blues
+    levels: [0.1, 0.5, 1, 2, 5, 10, 50, 100, 500, 1000, 2000, 3000, 4000]
+    extend: max
+    units: m3 s-1

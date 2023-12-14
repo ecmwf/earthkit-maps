@@ -114,7 +114,9 @@ jobs:
           python=3.10
     - name: Install package
       run: |
+        conda install pandoc
         python -m pip install --no-deps -e .
+        python -m pip install -r docs/requirements.txt
     - name: Build documentation
       run: |
         make docs-build

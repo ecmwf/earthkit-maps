@@ -4,6 +4,14 @@ version.py
 # Sphinx automatic generation of API
 docs/_api/
 
+# Data used in examples
+docs/examples/*.grib
+docs/examples/*.nc
+docs/examples/*.csv
+docs/examples/*.png
+docs/examples/*.svg
+docs/examples/*.txt
+
 # Combined environments
 ci/combined-environment-*.yml
 

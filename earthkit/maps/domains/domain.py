@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import cartopy.crs as ccrs
 import numpy as np
-import scipy.ndimage as sn
 
 from earthkit.maps import data, domains
 
@@ -128,20 +129,9 @@ class Domain:
         #     return f"the {self.domain_name}"
         if self.domain_name is None:
             if self.bounds is None:
-                string = "custom domain"
+                string = "None"
             else:
-                ordinal_values = []
-                for lon in self.latlon_bounds[:2]:
-                    direction = ""
-                    if lon != 0:
-                        direction = "°W" if lon > 0 else "°E"
-                    ordinal_values.append(f"{round(abs(lon), 2)}{direction}")
-                for lat in self.latlon_bounds[2:]:
-                    direction = ""
-                    if lat != 0:
-                        direction = "°N" if lat > 0 else "°S"
-                    ordinal_values.append(f"{round(abs(lat), 2)}{direction}")
-                string = ", ".join(ordinal_values)
+                string = domains.bounds.to_string(self.latlon_bounds)
             return string
         return self.domain_name
 
@@ -149,19 +139,24 @@ class Domain:
     def latlon_bounds(self):
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
 
-    def bbox(self, field):
+    def contains_point(self, point, crs=None):
+        if not self.bounds:
+            return True
+        if crs is not None:
+            point = self.crs.transform_point(*point, crs)
+        return (self.bounds[0] < point[0] < self.bounds[1]) and (
+            self.bounds[2] < point[1] < self.bounds[3]
+        )
+
+    def latlon_bbox(self, values, points):
+        source_crs = ccrs.PlateCarree()
+
+        return self._extract_bbox(values, points, source_crs)
+
+    def _extract_bbox(self, values, points, source_crs):
         from earthkit.maps.schemas import schema
 
-        try:
-            source_crs = field.projection().to_cartopy_crs()
-        except AttributeError:
-            source_crs = ccrs.PlateCarree()
-
-        points = field.to_points(flatten=False)
-        values = field.to_numpy(flatten=False)
-
         if self.bounds and schema.extract_domain:
-
             try:
                 crs_bounds = domains.bounds.from_bbox(self.bounds, source_crs, self.crs)
             except NotImplementedError:
@@ -191,27 +186,53 @@ class Domain:
                     values = np.roll(values, roll_by, axis=1)
 
                 if self._can_bbox:
-                    bbox = np.where(
-                        (points["x"] >= crs_bounds[0])
-                        & (points["x"] <= crs_bounds[1])
-                        & (points["y"] >= crs_bounds[2])
-                        & (points["y"] <= crs_bounds[3]),
-                        True,
-                        False,
-                    )
 
-                    kernel = np.ones((8, 8), dtype="uint8")
-                    bbox = sn.morphology.binary_dilation(bbox, kernel).astype(bool)
+                    try:
+                        import scipy.ndimage as sn
+                    except ImportError:
+                        warnings.warn(
+                            "No scipy installation found; scipy is required to "
+                            "speed up plotting of smaller domains by slicing "
+                            "the input data. Consider installing scipy to speed "
+                            "up this process."
+                        )
+                    finally:
+                        bbox = np.where(
+                            (points["x"] >= crs_bounds[0])
+                            & (points["x"] <= crs_bounds[1])
+                            & (points["y"] >= crs_bounds[2])
+                            & (points["y"] <= crs_bounds[3]),
+                            True,
+                            False,
+                        )
 
-                    shape = bbox[
-                        np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))
-                    ].shape
+                        kernel = np.ones((8, 8), dtype="uint8")
+                        bbox = sn.morphology.binary_dilation(
+                            bbox,
+                            kernel,
+                        ).astype(bool)
 
-                    points["x"] = points["x"][bbox].reshape(shape)
-                    points["y"] = points["y"][bbox].reshape(shape)
-                    values = values[bbox].reshape(shape)
+                        shape = bbox[
+                            np.ix_(np.any(bbox, axis=1), np.any(bbox, axis=0))
+                        ].shape
+
+                        points["x"] = points["x"][bbox].reshape(shape)
+                        points["y"] = points["y"][bbox].reshape(shape)
+                        values = values[bbox].reshape(shape)
 
         return values, points
+
+    def bbox(self, field):
+
+        try:
+            source_crs = field.projection().to_cartopy_crs()
+        except AttributeError:
+            source_crs = ccrs.PlateCarree()
+
+        points = field.to_points(flatten=False)
+        values = field.to_numpy(flatten=False)
+
+        return self._extract_bbox(values, points, source_crs)
 
 
 def lookup_name(domain_name):

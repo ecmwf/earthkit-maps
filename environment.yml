@@ -11,20 +11,9 @@ dependencies:
 - pytest-cov
 # DO NOT EDIT ABOVE THIS LINE, ADD DEPENDENCIES BELOW
 - earthkit-data
-- pandas
-- geopandas
 - matplotlib
-- cartopy>=0.19.0
+- cartopy
 - pyyaml
 - numpy
-- xarray
-- cf-units
-- scipy
-- sphinx>=7.2.6
 - pip:
-  - sphinx-autoapi>=3.0.0
-- sphinx_rtd_theme
-- sphinxcontrib-apidoc
-- nbformat
-- nbconvert
-- nbsphinx
+  - adjustText

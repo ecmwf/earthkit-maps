@@ -1,4 +1,65 @@
+# Copyright 2023, European Centre for Medium Range Weather Forecasts.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+id: 2m-temperature
+preferred-style: temperature_at_2m_in_celsius
+
+criteria:
+- {paramId: 167, shortName: 2t}
+- {paramId: 130, shortName: t}
+- {centre: edzw, paramId: 167}
+- {centre: edzw, paramId: 500015}
+- {centre: edzw, paramId: 500016}
+- {standard_name: air_temperature}
+- {standard_name: temp_scrn}
+- {long_name: near-surface air temperature}
+- {long_name: 2 metre temperature}
+- {long_name: Mean 2 metre temperature}
+- {long_name: screen level temperature}
+- {stash_code: 3236}
+
 styles:
-  default: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
-  units:
-    celsius: temperature.TEMPERATURE_AT_2M_IN_CELSIUS
+
+  temperature_at_2m_in_celsius:
+    type: Contour
+    colors:
+    - [0, 0, 0.5]
+    - [0, 0, 0.5]
+    - [0, 0, 0.5]
+    - [0, 0, 0.5]
+    - [0, 0, 0.5]
+    - [0, 0, 0.85]
+    - [0.25, 0, 1]
+    - [0.5, 0, 1]
+    - [0, 0.5, 1]
+    - [0, 1, 1]
+    - [0, 1, 0.5]
+    - [0.5, 1, 0]
+    - [0.8536, 1, 0]
+    - [1, 1, 0]
+    - [1, 0.9619, 0]
+    - [1, 0.8536, 0]
+    - [1, 0.6913, 0]
+    - [1, 0.5, 0]
+    - [1, 0.3087, 0]
+    - [1, 0.1464, 0]
+    - [1, 0.0381, 0]
+    - [1, 0, 0]
+    - [1, 0, 1]
+    - [1, 0, 1]
+    - [1, 0, 1]
+    - [1, 0, 1]
+    - [1, 0, 1]
+    levels: range(-48, 57, 4)
+    units: celsius

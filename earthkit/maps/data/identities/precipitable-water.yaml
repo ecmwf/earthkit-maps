@@ -1,5 +1,0 @@
-id: precipitable-water
-criteria:
-- {standard_name: precwtr}
-- {long_name: precipitable water}
-- {stash_code: 409}

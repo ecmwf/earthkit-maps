@@ -29,27 +29,29 @@ release = "0.0.0"  # earthkit.maps.__version__
 extensions = [
     "sphinx_rtd_theme",
     "nbsphinx",
-    # "autoapi.extension",
-    # "myst_parser",
-    # "sphinx.ext.autodoc",
-    # "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "autoapi.extension",
 ]
 
 # autodoc configuration
 autodoc_typehints = "none"
 
 # autoapi configuration
-# autoapi_dirs = ["../earthkit/maps"]
-# autoapi_ignore = ["*/version.py"]
-# autoapi_options = [
-#     "members",
-#     "inherited-members",
-#     "undoc-members",
-#     "show-inheritance",
-#     "show-module-summary",
-#     "imported-members",
-# ]
-# autoapi_root = "_api"
+autoapi_dirs = ["../earthkit/maps"]
+autoapi_ignore = ["*/version.py", "sphinxext/*", "*/data/*"]
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
+    "inherited-members",
+]
+autoapi_root = "_api"
+autoapi_member_order = "alphabetical"
+autoapi_add_toctree_entry = True
 
 # napoleon configuration
 # napoleon_google_docstring = False

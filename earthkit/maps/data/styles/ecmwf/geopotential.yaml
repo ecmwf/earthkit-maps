@@ -1,4 +1,0 @@
-styles:
-  default: geopotential.GEOPOTENTIAL_HEIGHT_IN_DAM
-  units:
-    dam: geopotential.GEOPOTENTIAL_HEIGHT_IN_DAM
