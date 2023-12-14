@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import glob
+import os
 
 import yaml
 
@@ -21,8 +22,16 @@ from earthkit.maps.metadata.units import are_equal
 
 
 def guess_style(data, units=None):
+    from earthkit.maps import schema
 
-    for fname in glob.glob(str(definitions.STYLES_DIR / "*")):
+    if os.path.exists(schema.style_library):
+        styles_path = f"{schema.style_library}/*"
+    else:
+        styles_path = definitions.STYLES_DIR / (
+            "*" if schema.style_library == "default" else f"{schema.style_library}/*"
+        )
+
+    for fname in glob.glob(str(styles_path)):
         with open(fname, "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
