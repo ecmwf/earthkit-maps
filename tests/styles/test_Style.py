@@ -37,6 +37,7 @@ def test_Style_levels():
         dynamic_style.levels()
 
 
+@pytest.mark.skipif(units._NO_CF_UNITS, reason="cf-units is not installed")
 def test_Style_units():
     style = styles.Style(units="celsius")
     assert style.units == "$°C$"
