@@ -9,8 +9,6 @@ dependencies:
 - pydata-sphinx-theme
 - pytest
 - pytest-cov
-- sphinx
-- sphinx-autoapi
 # DO NOT EDIT ABOVE THIS LINE, ADD DEPENDENCIES BELOW
 - earthkit-data
 - matplotlib
