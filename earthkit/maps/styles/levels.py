@@ -88,10 +88,6 @@ def step_range(data, step, reference=None):
         the generated levels will be generated as steps of 4 above and below
         the number 2.
 
-    Example
-    -------
-    ste
-
     Returns
     -------
     list
@@ -149,8 +145,10 @@ class Levels:
                     for i in config.replace("range(", "").replace(")", "").split(",")
                 )
                 kwargs = {"levels": range(*args)}
-        else:
+        elif isinstance(config, dict):
             kwargs = config
+        else:
+            kwargs = {"levels": config}
         return cls(**kwargs)
 
     def __init__(

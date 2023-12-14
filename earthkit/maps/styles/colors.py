@@ -14,7 +14,7 @@
 
 import matplotlib as mpl
 import numpy as np
-from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
+from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap
 
 
 def expand(colors, levels, extend_colors=0):
@@ -42,6 +42,7 @@ def contour_line_colors(colors, levels):
 
 
 def cmap_and_norm(colors, levels, normalize=True, extend=None):
+
     levels = list(levels)
     extend_colors = 0
     if extend == "both":
@@ -55,11 +56,13 @@ def cmap_and_norm(colors, levels, normalize=True, extend=None):
         extend_colors = 1
 
     colors = expand(colors, levels, extend_colors)
-    cmap = LinearSegmentedColormap.from_list(
-        name="",
-        colors=colors,
-        N=len(levels) + extend_colors,
-    )
+    N = len(levels) + extend_colors - 1
+
+    colormap = LinearSegmentedColormap.from_list
+    if len(colors) == N:
+        colormap = ListedColormap
+
+    cmap = colormap(name="", colors=colors, N=N)
 
     norm = None
     if normalize:

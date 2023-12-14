@@ -26,6 +26,7 @@ __all__ = [
     "legends",
     "levels",
     "auto",
+    "Style",
 ]
 
 
@@ -77,13 +78,14 @@ class Style:
             kwargs["levels"] = levels.Levels.from_config(kwargs["levels"])
         return getattr(styles, style_type)(**kwargs)
 
-    @classmethod
-    def from_magics_style(cls, magics_style):
-        pass
+    # TODO
+    # @classmethod
+    # def from_magics_style(cls, magics_style):
+    #     pass
 
     def __init__(
         self,
-        colors=None,
+        colors=schema.cmap,
         levels=None,
         gradients=None,
         normalize=True,
@@ -95,7 +97,7 @@ class Style:
         ticks=None,
         **kwargs,
     ):
-        self._colors = colors or schema.cmap
+        self._colors = colors
         self._levels = (
             levels
             if isinstance(levels, styles.levels.Levels)
@@ -125,11 +127,13 @@ class Style:
 
         self._kwargs = kwargs
 
-    def to_yaml(self):
-        pass
+    # TODO
+    # def to_yaml(self):
+    #     pass
 
-    def to_magics_style(self):
-        pass
+    # TODO
+    # def to_magics_style(self):
+    #     pass
 
     def levels(self, data=None):
         """
@@ -306,6 +310,9 @@ class Style:
         """
         kwargs = {**self.to_contourf_kwargs(values), **kwargs}
         return ax.contourf(x, y, values, *args, **kwargs)
+
+    def barbs(self, ax, x, y, u, v, *args, **kwargs):
+        return ax.barbs(x, y, u, v, *args, **kwargs)
 
     def tricontourf(self, ax, x, y, values, *args, **kwargs):
         """
