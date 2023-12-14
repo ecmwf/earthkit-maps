@@ -30,9 +30,35 @@ class Chart:
 
     """
     The top-level container for all plot elements.
+
+    Parameters
+    ----------
+    domain : str or list or earthkit.maps.domains.Domain, optional
+        A named domain, or a list of domain extents in the order
+        `[x_min, x_max, y_min, y_max]`, describing the domain tp be used by all
+        subplots in the `Chart`.
+        If not provided, an automatic domain will be created based on the
+        extents of any data plotted on the `Chart` (global if no data is
+        plotted).
+    domain_crs : str or cartopy.crs.CRS, optional
+        The coordinate reference system in which the `domain` extents are
+        defined. By default, a regular equirectangular latitude-longitude CRS
+        (Plate Carrée) is assumed.
+    crs : str or cartopy.crs.CRS, optional
+        The coordinate reference system to use for all subplots on this `Chart`.
+        If not provided, a suitable coordinate-reference system will be created
+        based on the `Chart`'s `domain`.
+    rows : int, optional
+        The number of rows to use for subplots on this `Chart`.
+    columns : int, optional
+        The number of columns to use for subplots on this `Chart`.
     """
 
     MAX_COLS = 8
+    """
+    The default maximum number of subplot columns - can be overridded by
+    instantiating a `Chart` with the `columns` argument.
+    """
 
     @classmethod
     def from_gridspec(cls, gridspec, *args, **kwargs):
@@ -50,12 +76,19 @@ class Chart:
         obj._gridspec = gridspec
         return obj
 
-    def __init__(self, domain=None, crs=None, rows=None, columns=None):
-
-        self._domain = domain
-        self._crs = crs
-
-        self.domain = domains.parse(domain, crs)
+    def __init__(self, domain=None, domain_crs=None, crs=None, rows=None, columns=None):
+        self._custom_domain = False
+        if isinstance(domain, domains.Domain):
+            self._domain = str(domain)
+            self._domain_crs = domain.crs
+            self._crs = domain.crs
+            self.domain = domain
+            self._custom_domain = True
+        else:
+            self._domain = domain
+            self._domain_crs = domain_crs
+            self._crs = crs
+            self.domain = domains.parse(domain, crs)
 
         self._fig = None
         self._gridspec = None
@@ -64,7 +97,7 @@ class Chart:
         self._columns = columns
 
         self.subplots = []
-        self._subplots_generator = None
+        self.__subplots_generator = None
 
         self._queue = []
 
@@ -72,8 +105,9 @@ class Chart:
         return len(self.subplots)
 
     def __getitem__(self, i):
-        while i + 1 > len(self.subplots):
-            self.add_subplot()
+        if not isinstance(i, slice):
+            while i + 1 > len(self.subplots):
+                self.add_subplot()
         return self.subplots[i]
 
     @property
@@ -104,7 +138,7 @@ class Chart:
         return self._rows
 
     @property
-    def cols(self):
+    def columns(self):
         """The number of columns in the `Chart`'s subplot layout."""
         if self._columns is None:
             if len(self) == 0:
@@ -117,47 +151,92 @@ class Chart:
     @property
     def shape(self):
         """The shape of the `Chart`'s subplot layout."""
-        return self.rows, self.cols
+        return self.rows, self.columns
 
     @property
-    def subplots_generator(self):
-        if self._subplots_generator is None:
-            self._subplots_generator = (
+    def _subplots_generator(self):
+        if self.__subplots_generator is None:
+            self.__subplots_generator = (
                 (row, col)
                 for row, col in itertools.product(
                     range(self.gridspec.nrows),
                     range(self.gridspec.ncols),
                 )
             )
-        return self._subplots_generator
+        return self.__subplots_generator
 
-    def add_subplot(self, *args, data=None, domain=None, crs=None, **kwargs):
+    def add_subplot(
+        self, *args, data=None, domain=None, crs=None, row=None, column=None, **kwargs
+    ):
         """
         Add a subplot within the `Chart`'s subplot layout.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base, optional
+            If provided, generate a subplot with a domain and CRS based on the
+            extents of the input data.
+        domain : str or list or earthkit.maps.domains.Domain, optional
+            A named domain, or a list of domain extents in the order
+            `[x_min, x_max, y_min, y_max]`, describing the domain tp be used by
+            all subplots in the `Chart`.
+            If not provided, the top-level `Chart`'s `domain` will be used.
+        domain_crs : str or cartopy.crs.CRS, optional
+            The coordinate reference system in which the `domain` extents are
+            defined. By default, a regular equirectangular latitude-longitude
+            CRS (Plate Carrée) is assumed.
+        crs : str or cartopy.crs.CRS, optional
+            The coordinate reference system to use for all subplots on this
+            `Chart`. If not provided, a suitable coordinate-reference system
+            will be created based on the `Chart`'s `domain`.
+        rows : int, optional
+            The row position at which to insert this subplot.
+        columns : int, optional
+            The column position at which to insert this subplot.
         """
-        row, col = next(self.subplots_generator)
+        if row is None and column is None:
+            row, column = next(self._subplots_generator)
 
         if domain is None and crs is None:
-            domain = self._domain
+            domain = self.domain if self._custom_domain else self._domain
+            domain_crs = self._domain_crs
             crs = self._crs
 
         if not args:
-            args = (self.gridspec[row, col],)
+            args = (self.gridspec[row, column],)
 
         if data is not None:
             subplot = Subplot.from_data(
-                self, data, *args, domain=domain, crs=crs, **kwargs
+                self,
+                data,
+                *args,
+                domain=domain,
+                domain_crs=domain_crs,
+                crs=crs,
+                **kwargs,
             )
         else:
-            subplot = Subplot(self, *args, domain=domain, crs=crs, **kwargs)
+            subplot = Subplot(
+                self, *args, domain=domain, domain_crs=domain_crs, crs=crs, **kwargs
+            )
 
         self.subplots.append(subplot)
         return subplot
 
-    @property
-    def distinct_legend_layers(self):
-        """Group layers by style."""
-        subplot_layers = [subplot.distinct_legend_layers for subplot in self.subplots]
+    def distinct_legend_layers(self, subplots=None):
+        """
+        Get a list of layers with distinct styles.
+
+        Parameters
+        ----------
+        subplots : list, optional
+            If provided, only these subplots will be considered when identifying
+            unique styles.
+        """
+        if subplots is None:
+            subplots = self.subplots
+
+        subplot_layers = [subplot.distinct_legend_layers for subplot in subplots]
         subplot_layers = [item for sublist in subplot_layers for item in sublist]
 
         groups = []
@@ -184,7 +263,7 @@ class Chart:
 
         return wrapper
 
-    def expand_rows_cols(method):
+    def _expand_rows_cols(method):
         def wrapper(self, data, *args, **kwargs):
             if not isinstance(data, (earthkit.data.core.Base, list, np.ndarray)):
                 data = earthkit.data.from_object(data)
@@ -218,6 +297,27 @@ class Chart:
     def plot(self, data, *args, **kwargs):
         """
         Plot some data on this `Chart`.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The values of the geospatial x coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        y : numpy.ndarray, optional
+            The values of the geospatial y coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        transform : cartopy.crs.CCRS, optional
+            The CRS of the source x and y values.
+        style : earthkit.maps.styles.Style, optional
+            The style to use for this visualisation. If no style is passed,
+            earthkit-maps will attempt to choose a suitable style from its
+            built-in styles library.
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
         """
         if data.__class__.__name__ in ("DataFrame", "Series"):
             raise NotImplementedError(
@@ -226,7 +326,7 @@ class Chart:
         else:
             return self._plot_gridded_scalar(data, *args, **kwargs)
 
-    @expand_rows_cols
+    @_expand_rows_cols
     def _plot_gridded_scalar(self, *args, **kwargs):
         """
         Plot some data.
@@ -248,45 +348,319 @@ class Chart:
         """
         pass
 
-    @expand_rows_cols
+    @_expand_rows_cols
     def contourf(self, *args, **kwargs):
+        """
+        Plot some data on this `Chart` using the matplotlib `contourf` method.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The values of the geospatial x coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        y : numpy.ndarray, optional
+            The values of the geospatial y coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        transform : cartopy.crs.CCRS, optional
+            The CRS of the source x and y values.
+        style : earthkit.maps.styles.Style, optional
+            The style to use for this visualisation. If no style is passed,
+            earthkit-maps will attempt to choose a suitable style from its
+            built-in styles library.
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
+        """
         pass
 
-    shaded_contour = contourf
-
-    @expand_rows_cols
+    @_expand_rows_cols
     def contour(self, *args, **kwargs):
+        """
+        Plot some data on this `Chart` using the matplotlib `contour` method.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The values of the geospatial x coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        y : numpy.ndarray, optional
+            The values of the geospatial y coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        transform : cartopy.crs.CCRS, optional
+            The CRS of the source x and y values.
+        style : earthkit.maps.styles.Style, optional
+            The style to use for this visualisation. If no style is passed,
+            earthkit-maps will attempt to choose a suitable style from its
+            built-in styles library.
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
+        """
         pass
 
-    @expand_rows_cols
+    @_expand_rows_cols
     def pcolormesh(self, *args, **kwargs):
+        """
+        Plot some data on this `Chart` using the matplotlib `pcolormesh` method.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The values of the geospatial x coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        y : numpy.ndarray, optional
+            The values of the geospatial y coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        transform : cartopy.crs.CCRS, optional
+            The CRS of the source x and y values.
+        style : earthkit.maps.styles.Style, optional
+            The style to use for this visualisation. If no style is passed,
+            earthkit-maps will attempt to choose a suitable style from its
+            built-in styles library.
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
+        """
         pass
 
-    @expand_rows_cols
+    @_expand_rows_cols
     def scatter(self, *args, **kwargs):
+        """
+        Plot some data on this `Chart` using the matplotlib `scatter` method.
+
+        Parameters
+        ----------
+        data : earthkit.data.core.Base or numpy.ndarray or xarray.Dataset
+            The data to plot on the chart.
+        x : numpy.ndarray, optional
+            The values of the geospatial x coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        y : numpy.ndarray, optional
+            The values of the geospatial y coordinate of the data. Only required
+            if input data is a raw numpy array of values.
+        transform : cartopy.crs.CCRS, optional
+            The CRS of the source x and y values.
+        style : earthkit.maps.styles.Style, optional
+            The style to use for this visualisation. If no style is passed,
+            earthkit-maps will attempt to choose a suitable style from its
+            built-in styles library.
+
+        **kwargs : dict, optional
+            Extra arguments to pass to the underlying matplotlib plotting
+            method.
+        """
         pass
 
-    def polygons(self, *args, **kwargs):
-        if not self.subplots:
-            self._rows, self._columns = (1, 1)
-            self.add_subplot()
-        [subplot.polygons(*args, **kwargs) for subplot in self.subplots]
+    @_expand_rows_cols
+    def barbs(self, *args, **kwargs):
+        pass
 
     @_defer
     def coastlines(self, *args, **kwargs):
+        """
+        Add coastal outlines from the Natural Earth “coastline” collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
         return [subplot.coastlines(*args, **kwargs) for subplot in self.subplots]
 
     @_defer
     def borders(self, *args, **kwargs):
+        """
+        Add country boundaries from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
         return [subplot.borders(*args, **kwargs) for subplot in self.subplots]
 
     @_defer
+    def states_provinces(self, *args, **kwargs):
+        """
+        Add state/province boundaries from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
+        return [subplot.states_provinces(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
     def land(self, *args, **kwargs):
+        """
+        Add shaded land polygons from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
         return [subplot.land(*args, **kwargs) for subplot in self.subplots]
 
     @_defer
     def ocean(self, *args, **kwargs):
+        """
+        Add shaded ocean polygons from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
         return [subplot.ocean(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
+    def rivers(self, *args, **kwargs):
+        """
+        Add river polygons from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
+        return [subplot.rivers(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
+    def lakes(self, *args, **kwargs):
+        """
+        Add shaded lake polygons from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
+        return [subplot.lakes(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
+    def urban_areas(self, *args, **kwargs):
+        """
+        Add urban areas polygons from the Natural Earth collection.
+
+        Parameters
+        ----------
+        resolution: str, optional
+            One of "low", "medium" or "high", or a named resolution from the
+            Natrual Earth dataset.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
+        return [subplot.urban_areas(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
+    def shapes(self, *args, **kwargs):
+        """
+        Add shapes to each subplot in the `Chart`.
+
+        Parameters
+        ----------
+        shapes : str or cartopy.io.shapereader.Reader
+            The shapes to add to each subplot. Either a path to a shapefile, or
+            a cartopy shape reader object.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
+        return [subplot.shapes(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
+    def cities(self, *args, **kwargs):
+        """
+        Add cities to each subplot in the `Chart`.
+
+        Parameters
+        ----------
+        density: str, optional
+            The density of cities to plot. One of "low", "medium" or "high".
+        capitals_only : bool, optional
+            If `True`, only capital cities will be plotted (default `False`).
+        adjust_labels: bool, optional, EXPERIMENTAL
+            If `True`, an algorithm will be applied which attempts to adjust
+            city labels to minimise overlapping. **This can be very slow**.
+
+        Note
+        ----
+            Matplotlib keyword arguments can be used when drawing the feature.
+            This allows standard Matplotlib control over aspects such as
+            'facecolor', 'alpha', etc.
+        """
+        return [subplot.cities(*args, **kwargs) for subplot in self.subplots]
+
+    @_defer
+    def image(self, *args, **kwargs):
+        return [subplot.image(*args, **kwargs) for subplot in self.subplots]
 
     @_defer
     def stock_img(self, *args, **kwargs):
@@ -294,6 +668,25 @@ class Chart:
 
     @_defer
     def gridlines(self, *args, **kwargs):
+        """
+        Add gridlines to the chart.
+
+        Parameters
+        ----------
+        xstep : float, optional
+            The step/difference between each x gridline.
+        xref : float, optional
+            The reference point around which to calibrate the x level range.
+        ystep : float, optional
+            The step/difference between each y gridline.
+        yref : float, optional
+            The reference point around which to calibrate the y level range.
+
+        Note
+        ----
+            Any keyword arguments accepted by cartopy's `gridlines` method can
+            be used when adding gridlines.
+        """
         return [subplot.gridlines(*args, **kwargs) for subplot in self.subplots]
 
     def format_string(self, string, unique=True, grouped=True):
@@ -313,12 +706,19 @@ class Chart:
             method(self, *args, **kwargs)
 
     @schema.legend.apply()
-    def legend(self, *args, location=None, **kwargs):
+    def legend(self, *args, subplots=None, location=None, **kwargs):
+        """
+        Add legends to the chart for all subplots.
+
+        Parameters
+        ----------
+
+        """
         legends = []
 
         anchor = None
         non_cbar_layers = []
-        for i, layer in enumerate(self.distinct_legend_layers):
+        for i, layer in enumerate(self.distinct_legend_layers(subplots)):
             if isinstance(location, (list, tuple)):
                 loc = location[i]
             else:
@@ -342,19 +742,6 @@ class Chart:
                     ax.set_anchor(anchor)
 
         return legends
-
-    @_defer
-    def add_geometries(self, *args, **kwargs):
-        """
-        Plot geometries on all subplots.
-
-        Parameters
-        ----------
-        shapes : geopandas.GeoDataFrame or earthkit.data
-
-        shapes, *args, crs=None, labels=False, label_kwargs=None, **kwargs
-        """
-        return [subplot.add_geometries(*args, **kwargs) for subplot in self.subplots]
 
     @property
     def _default_title_template(self):

@@ -139,6 +139,15 @@ class Domain:
     def latlon_bounds(self):
         return domains.bounds.from_bbox(self.bounds, ccrs.PlateCarree(), self.crs)
 
+    def contains_point(self, point, crs=None):
+        if not self.bounds:
+            return True
+        if crs is not None:
+            point = self.crs.transform_point(*point, crs)
+        return (self.bounds[0] < point[0] < self.bounds[1]) and (
+            self.bounds[2] < point[1] < self.bounds[3]
+        )
+
     def latlon_bbox(self, values, points):
         source_crs = ccrs.PlateCarree()
 

@@ -38,15 +38,15 @@ class Input:
         self._data = data
         self._transform = transform
 
-        self.x = x
-        self.y = y
-        self._values = None
-        self.extract_scalar(domain)
-
         self._converted_values = None
 
         self._style = style
         self._kwargs = kwargs
+
+        self.x = x
+        self.y = y
+        self._values = None
+        self.extract(domain)
 
     @property
     def data(self):
@@ -114,7 +114,7 @@ class Input:
                     g = f"N{n}"
             return {"grid": g}
 
-    def extract_scalar(self, domain=None):
+    def extract(self, domain=None):
         if self.x is None and self.y is None:
 
             if self.gridspec is not None:
@@ -157,6 +157,27 @@ class Input:
             self.x, self.y = np.meshgrid(self.x, self.y)
 
 
+class Vector(Input):
+    def __init__(self, u, v, *args, **kwargs):
+        self._u_data = u
+        self._v_data = v
+        self.u = None
+        self.v = None
+        super().__init__(u, *args, **kwargs)
+
+    def extract(self, domain):
+        self._data = self._u_data
+        super().extract(domain)
+        self.u = self._values
+        self.x, self.y = None, None
+
+        self._data = self._v_data
+        super().extract(domain)
+        self.v = self._values
+
+        self._values = [self.u, self.v]
+
+
 def get_points(dx):
     import numpy as np
 
@@ -164,3 +185,11 @@ def get_points(dx):
     lon_v = np.linspace(0, 360 - dx, int(360 / dx))
     lon, lat = np.meshgrid(lon_v, lat_v)
     return {"x": lon, "y": lat}
+
+
+def sanitise(data):
+    if not isinstance(data, (earthkit.data.core.Base, list, np.ndarray)):
+        data = earthkit.data.from_object(data)
+    if not isinstance(data, earthkit.data.core.Base) or not hasattr(data, "__len__"):
+        data = [data]
+    return data[0]
