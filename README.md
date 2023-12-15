@@ -5,36 +5,26 @@
 [![PyPI version fury.io](https://badge.fury.io/py/earthkit-maps.svg)](https://pypi.python.org/pypi/earthkit-maps/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/earthkit-maps.svg)](https://pypi.python.org/pypi/earthkit-maps/)
 
-Geospatial visualisation tools and templates
-
 **DISCLAIMER**
-This project is in the **BETA** stage of development. Please be aware that interfaces and functionality may change as the project develops. If this software is to be used in operational systems you are **strongly advised to use a released tag in your system configuration**, and you should be willing to accept incoming changes and bug fixes that require adaptations on your part. ECMWF **does use** this software in operations and abides by the same caveats.
 
-## Quick Start
+> This project is in the **BETA** stage of development. Please be aware that interfaces and functionality may change as the project develops. If this software is to be used in operational systems you are **strongly advised to use a released tag in your system configuration**, and you should be willing to accept incoming changes and bug fixes that require adaptations on your part. ECMWF **does use** this software in operations and abides by the same caveats.
 
-```python
->>> import earthkit.maps
+Format-agnostics geospatial visualisation tools and templates.
+
+## Documentation
+
+The documentation can be found at https://earthkit-maps.readthedocs.io/.
+
+## Install
+
+Install via `pip` with:
 
 ```
-
-## Workflow for developers/contributors
-
-For best experience create a new conda environment (e.g. DEVELOP) with Python 3.10:
-
-```
-conda create -n DEVELOP -c conda-forge python=3.10
-conda activate DEVELOP
+$ pip install earthkit-maps
 ```
 
-Before pushing to GitHub, run the following commands:
-
-1. Update conda environment: `make conda-env-update`
-1. Install this package: `pip install -e .`
-1. Sync with the latest [template](https://github.com/ecmwf-projects/cookiecutter-conda-package) (optional): `make template-update`
-1. Run quality assurance checks: `make qa`
-1. Run tests: `make unit-tests`
-1. Run the static type checker: `make type-check`
-1. Build the documentation (see [Sphinx tutorial](https://www.sphinx-doc.org/en/master/tutorial/)): `make docs-build`
+More details, such optional additional dependencies, can be found  at
+https://earthkit-data.readthedocs.io/en/latest/install.html.
 
 ## License
 
