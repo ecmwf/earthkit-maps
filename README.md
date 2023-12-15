@@ -1,6 +1,8 @@
 # earthkit.maps
 
 ![earthkit-maps](docs/_static/earthkit-maps.png)
+[![PyPI version fury.io](https://badge.fury.io/py/earthkit-maps.svg)](https://pypi.python.org/pypi/earthkit-maps/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/earthkit-maps.svg)](https://pypi.python.org/pypi/earthkit-maps/)
 
 Geospatial visualisation tools and templates
 
