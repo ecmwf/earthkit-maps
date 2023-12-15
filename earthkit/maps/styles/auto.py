@@ -13,37 +13,31 @@
 # limitations under the License.
 
 import glob
-import importlib
 import os
 
 import yaml
 
 from earthkit.maps import definitions, styles
-from earthkit.maps.layers.metadata import compare_units
+from earthkit.maps.metadata.units import are_equal
 
 
-def suggest_style(data, units=None):
+def guess_style(data, units=None):
     from earthkit.maps import schema
 
-    for fname in glob.glob(str(definitions.DATA_DIR / "identities" / "*")):
+    if os.path.exists(schema.style_library):
+        styles_path = f"{schema.style_library}/*"
+    else:
+        styles_path = definitions.STYLES_DIR / (
+            "*" if schema.style_library == "default" else f"{schema.style_library}/*"
+        )
+
+    for fname in glob.glob(str(styles_path)):
         with open(fname, "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
-        if hasattr(data, "metadata"):
-            search = data.metadata
-        else:
-            data_key = [
-                key
-                for key in data.attrs["reduce_attrs"]
-                if "reduce_dims" in data.attrs["reduce_attrs"][key]
-            ][0]
-
-            def search(x, default):
-                return data.attrs["reduce_attrs"][data_key].get(x, default)
-
         for criteria in config["criteria"]:
             for key, value in criteria.items():
-                if search(key, default=None) != value:
+                if data.metadata(key, default=None) != value:
                     break
             else:
                 break
@@ -53,40 +47,14 @@ def suggest_style(data, units=None):
     else:
         return styles.DEFAULT_STYLE
 
-    style_config_file = None
-    style_library = None
-
-    for location in [schema.style_library, 'default']:
-        temp_style_config_file = (
-            definitions.DATA_DIR / "styles" / location / f"{config['id']}.yaml"
-        )
-        if os.path.exists(str(temp_style_config_file)):
-            style_config_file = temp_style_config_file
-            style_library = location
-            break
-
-    if style_config_file is None:
-        return styles.DEFAULT_STYLE
-
-    with open(style_config_file, "r") as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
-
     if units is None:
-        style = config["styles"]["default"]
+        style = config["styles"][config["preferred-style"]]
     else:
-        for unit, style in config["styles"].get("units", {}).items():
-            if compare_units(unit, units):
+        for _, style in config["styles"].items():
+            if are_equal(style.get("units"), units):
                 break
         else:
-            raise ValueError(f"{config['id']} has no styles with units {units}")
+            # No style matching units found; return default
+            return styles.Style(units=units)
 
-    module, style = style.split(".")
-
-    if style_library != "default":
-        module = importlib.import_module(
-            f"earthkit.maps.styles.{style_library}.{module}"
-        )
-    else:
-        module = importlib.import_module(f"earthkit.maps.styles.{module}")
-
-    return getattr(module, style)
+    return styles.Style.from_dict(style)

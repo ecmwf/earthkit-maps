@@ -14,7 +14,6 @@
 
 import cartopy.crs as ccrs
 import numpy as np
-from earthkit.data.utils.bbox import BoundingBox
 
 CYCLIC_SYSTEMS = ["PlateCarree", "Mercator"]
 
@@ -88,7 +87,8 @@ def from_bbox(extents, crs, src_crs=None):
     if src_crs is None:
         src_crs = ccrs.PlateCarree()
 
-    if isinstance(extents, BoundingBox):
+    # Check if extents are an earthkit-data BoundingBox
+    if hasattr(extents, "north"):
         extents = [extents.west, extents.east, extents.south, extents.north]
 
     ll_grid = crs.__class__.__name__ in CYCLIC_SYSTEMS
@@ -126,3 +126,32 @@ def from_bbox(extents, crs, src_crs=None):
         max_x %= 360
 
     return [min_x, max_x, min_y, max_y]
+
+
+def to_string(bounds):
+    """
+    Convert a list of lat-lon bounds to a human-readable string.
+
+    Parameters
+    ----------
+    bounds : list
+        A list of latitude-longitude bounds in the order
+        [min_lon, max_lon, min_lat, max_lat].
+
+    Returns
+    -------
+    str
+    """
+    ordinal_values = []
+    for lon in bounds[:2]:
+        direction = ""
+        if lon != 0:
+            direction = "°W" if lon > 0 else "°E"
+        ordinal_values.append(f"{round(abs(lon), 2)}{direction}")
+    for lat in bounds[2:]:
+        direction = ""
+        if lat != 0:
+            direction = "°N" if lat > 0 else "°S"
+        ordinal_values.append(f"{round(abs(lat), 2)}{direction}")
+
+    return ", ".join(ordinal_values)

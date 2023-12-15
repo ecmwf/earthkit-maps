@@ -1,7 +1,0 @@
-id: geopotential
-criteria:
-- {paramId: 129}
-- {shortName: z}
-- {levelist: ["500"]}
-- {standard_name: geopotential}
-- {long_name: Geopotential}

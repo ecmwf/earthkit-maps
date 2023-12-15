@@ -8,9 +8,38 @@ Welcome to the earthkit-maps documentation
 **earthkit-maps** is a Python package for producing publication-quality weather
 and climate maps using a simple API and a convenient library of templates.
 
+**earthkit-maps** makes it possible to generate automatic geospatial
+visualisations driven by an understanding of common weather and climate science
+metadata standards.
+
 .. code-block:: python
 
     earthkit.maps.quickplot(data)
 
 .. image:: images/quickplot-era5-t2m-20220901.png
    :width: 600
+
+**earthkit-maps** also provides deep levels of customisation to tailor
+visualisations to suit your needs.
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Documentation
+
+   _api/index
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples
+   :titlesonly:
+
+   user-guide
+   examples/gallery/gallery.ipynb
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Installation
+
+   install
+   development
+   licence

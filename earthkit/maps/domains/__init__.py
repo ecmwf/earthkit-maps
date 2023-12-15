@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from earthkit.data.utils.bbox import BoundingBox
-from earthkit.data.utils.projections import Projection
-
 from earthkit.maps.domains import bounds, crs, optimal
 from earthkit.maps.domains.domain import Domain
 
@@ -27,6 +24,9 @@ __all__ = [
 
 
 def parse(domain, crs):
+    from earthkit.data.utils.bbox import BoundingBox
+    from earthkit.data.utils.projections import Projection
+
     from earthkit.maps.schemas import schema
 
     if isinstance(domain, BoundingBox):

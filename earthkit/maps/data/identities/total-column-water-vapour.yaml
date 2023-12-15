@@ -1,8 +1,0 @@
-id: total-column-water-vapour
-criteria:
-- {paramId: 136, shortName: tcwv}
-- {shortName: tcwv}
-- {standard_name: tcwv}
-- {long_name: Total Column Water Vapour}
-- {long_name: Total column water vapour}
-- {long_name: Total column vertically-integrated water vapour}

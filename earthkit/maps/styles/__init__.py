@@ -12,429 +12,505 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import math
+import warnings
 
-import earthkit.data
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
-from cf_units import Unit
-from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap
-from matplotlib.patches import Rectangle
 
-from earthkit.maps.formats.units import compare_units
-from earthkit.maps.layers import metadata
+from earthkit.maps import metadata, styles
 from earthkit.maps.schemas import schema
+from earthkit.maps.styles import auto, colors, legends, levels
 
-logger = logging.getLogger(__name__)
-
-DEFAULT_LEGEND_LABEL = "{variable_name} ({units})"
-
-
-def auto_range(data, divergence_point=None, n_levels=8):
-
-    if isinstance(data, earthkit.data.core.Base):
-        data = data.to_numpy()
-    min_value = np.nanmin(data)
-    max_value = np.nanmax(data)
-
-    if divergence_point == 0:
-        abs_max = max(abs(min_value), abs(max_value))
-        min_value = -abs_max
-        max_value = abs_max
-
-    data_range = max_value - min_value
-
-    initial_bin = data_range / n_levels
-
-    magnitude = 10 ** (math.floor(math.log(initial_bin, 10)))
-    bin_width = initial_bin - (initial_bin % -magnitude)
-
-    start = min_value - (min_value % magnitude)
-
-    levels = list(np.arange(start, start + bin_width * n_levels + bin_width, bin_width))
-
-    while levels[-2] > max_value:
-        levels = levels[:-1]
-
-    return levels
-
-
-def step_range(data, step, multiple=None):
-
-    if multiple is None:
-        multiple = step
-
-    if isinstance(data, earthkit.data.core.Base):
-        data = data.to_numpy()
-    min_value = np.nanmin(data)
-    max_value = np.nanmax(data)
-
-    min_value = min_value - (min_value % multiple)
-    max_value = int(math.ceil(max_value / multiple)) * multiple
-
-    levels = np.arange(min_value, max_value + step, step)
-    return levels
-
-
-def expand_colors(colors, levels):
-    if isinstance(colors, (list, tuple)) and len(colors) == 1:
-        colors *= len(levels) - 1
-    if isinstance(colors, str):
-        try:
-            cmap = mpl.cm.get_cmap(colors)
-        except ValueError:
-            colors = [colors] * (len(levels) - 1)
-        else:
-            colors = [mpl.cm.get_cmap(cmap)(i) for i in np.linspace(0, 1, len(levels))]
-    return colors
-
-
-def gradients_cmap(levels, colors, gradients, normalize, **kwargs):
-
-    normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
-    color_bins = list(zip(normalised, colors))
-    cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
-
-    if not isinstance(gradients, (list, tuple)):
-        gradients = [gradients] * (len(levels) - 1)
-
-    extrapolated_levels = []
-    for i in range(len(levels) - 1):
-        bins = list(np.linspace(levels[i], levels[i + 1], gradients[i]))
-        extrapolated_levels += bins[(1 if i != 0 else 0) :]
-    levels = extrapolated_levels
-
-    norm = None
-    if normalize:
-        norm = BoundaryNorm(levels, cmap.N)
-
-    return {**{"cmap": cmap, "norm": norm, "levels": levels}, **kwargs}
+__all__ = [
+    "colors",
+    "legends",
+    "levels",
+    "auto",
+    "Style",
+]
 
 
 class Style:
+    """
+    Class describing a mapping style.
+
+    Parameters
+    ----------
+    colors : str or list or matplotlib.colors.Colormap, optional
+        The colors to be used in this `Style`. This can be a
+        `named matplotlib colormap
+        <https://matplotlib.org/stable/gallery/color/colormap_reference.html>`__,
+        a list of colors (as named CSS4 colors, hexadecimal colors or three
+        (four)-element lists of RGB(A) values), or a pre-defined matplotlib
+        colormap object. If not provided, the default colormap of the active
+        `schema` will be used.
+    levels : list or earthkit.maps.styles.levels.Levels, optional
+        The levels to use in this `Style`. This can be a list of specific
+        levels, or an earthkit `Levels` object. If not provided, some suitable
+        levels will be generated automatically (experimental!).
+    gradients : list, optional
+        The number of colors to insert between each level in `levels`. If None,
+        one color level will be inserted between each level.
+    normalize : bool, optional
+        If `True` (default), then the colors will be normalized over the level
+        range.
+    units : str, optional
+        The units in which the levels are defined. If this `Style` is used with
+        data not using the given units, then a conversion will be attempted;
+        any data incompatible with these units will not be able to use this
+        `Style`. If `units` are not provided, then data plotted using this
+        `Style` will remain in their original units.
+        Note that passing `units` requires `cf_units` to be installed.
+    units_label : str, optional
+        The label to use in titles and legends to represent the units of the
+        data.
+    legend_style : str, optional
+        The style of legend to use by default with this style. Must be one of
+        `colorbar` (default), `disjoint`, `histogram`, or `None` (no legend).
+    bin_labels : list, optional
+        A list of categorical labels for each bin in the legend.
+    """
+
+    @classmethod
+    def from_dict(cls, kwargs):
+        style_type = kwargs.pop("type")
+        if "levels" in kwargs:
+            kwargs["levels"] = levels.Levels.from_config(kwargs["levels"])
+        return getattr(styles, style_type)(**kwargs)
+
+    # TODO
+    # @classmethod
+    # def from_magics_style(cls, magics_style):
+    #     pass
+
     def __init__(
         self,
-        colors="auto",
+        colors=schema.cmap,
         levels=None,
-        divergence_point=None,
-        level_step=None,
-        level_multiple=None,
-        units=None,
-        units_override=None,
-        normalize=True,
-        legend_type="colorbar",
-        categories=None,
-        conversion=None,
-        ticks=None,
         gradients=None,
-        missing=None,
+        normalize=True,
+        units=None,
+        units_label=None,
+        legend_style="colorbar",
+        legend_kwargs=None,
+        bin_labels=None,
+        ticks=None,
         **kwargs,
     ):
-        if colors == "auto":
-            self._colors = schema.cmap
-        else:
-            self._colors = colors
-
-        self._levels = levels
-        self._level_step = level_step
-        self._level_multiple = level_multiple
-        self._divergence_point = divergence_point
-
-        self.legend_type = legend_type
-
-        self._units = units
-        self._units_override = units_override
+        self._colors = colors
+        self._levels = (
+            levels
+            if isinstance(levels, styles.levels.Levels)
+            else styles.levels.Levels(levels)
+        )
         self.normalize = normalize
-        self.kwargs = kwargs
+        self.gradients = gradients
 
-        self.conversion = conversion
+        if units is not None and metadata.units._NO_CF_UNITS:
+            warnings.warn(
+                "You must have cf-units installed to use unit conversion "
+                "features; since no cf-units installation was found, no units "
+                "will be applied to this style"
+            )
+            units = None
+        self._units = units
+        self._units_label = units_label
 
-        self._categories = categories
+        self._legend_style = legend_style
+        if self._legend_style == "None":
+            self._legend_style = None
 
-        self._missing = missing
-
-        self._legend_kwargs = kwargs.get("legend_kwargs", {})
+        self._bin_labels = bin_labels
+        self._legend_kwargs = legend_kwargs or dict()
         if ticks is not None:
             self._legend_kwargs["ticks"] = ticks
-        self.gradients = gradients
+
+        self._kwargs = kwargs
+
+    # TODO
+    # def to_yaml(self):
+    #     pass
+
+    # TODO
+    # def to_magics_style(self):
+    #     pass
+
+    def levels(self, data=None):
+        """
+        Generate levels specific to some data.
+
+        Parameters
+        ----------
+        data : numpy.ndarray or xarray.DataArray or earthkit.data.core.Base
+            The data for which to generate a list of levels.
+
+        Returns
+        -------
+        list
+        """
+        if data is None:
+            if self._levels._levels is not None:
+                return self._levels._levels
+            else:
+                raise ValueError(
+                    "this style uses dynamic levels; include the `data` "
+                    "argument to generate levels"
+                )
+        return self._levels.apply(data)
+
+    @property
+    def extend(self):
+        """Convenience access to 'extend' kwarg."""
+        return self._kwargs.get("extend")
 
     @property
     def units(self):
-        if self._units_override is not None:
-            return metadata.format_units(self._units_override)
+        """Formatted units for use in figure text."""
+        if self._units_label is not None:
+            return self._units_label
         elif self._units is not None:
-            return metadata.format_units(self._units)
+            return metadata.units.format_units(self._units)
 
     def convert_units(self, values, source_units, short_name=""):
-        if self.conversion is not None:
-            values = self.conversion(values)
+        """
+        Convert some values from their source units to this `Style`'s units.
 
-        if self._units is None:
+        Parameters
+        ----------
+        values : numpy.ndarray
+            The values to convert from their source units to this `Style`'s
+            units.
+        source_units : str or cf_units.Unit
+            The source units of the given values.
+        short_name : str, optional
+            The short name of the variable, which is used to make extra
+            assumptions about the data's unit covnersion (for example,
+            temperature anomalies need special consideration when converting
+            between Celsius and Kelvin).
+        """
+        if self._units is None or source_units is None:
             return values
 
-        # For temperature anomalies we do not want to convert values, just change the units string
-        if "anomaly" in short_name.lower() and any(
-            [
-                compare_units("celsius", source_units),
-                compare_units("K", source_units),
-            ]
+        # For temperature anomalies we do not want to convert values, just
+        # change the units string
+        if "anomaly" in short_name.lower() and metadata.units.anomaly_equivalence(
+            source_units
         ):
             return values
 
-        return Unit(source_units).convert(values, self._units)
+        return metadata.units.convert(values, source_units, self._units)
 
-    def levels(self, data):
-        if self._levels is None:
-            if self._level_step is None:
-                return auto_range(data, self._divergence_point)
-            else:
-                return step_range(data, self._level_step, self._level_multiple)
-        return self._levels
+    def to_matplotlib_kwargs(self, data):
+        """
+        Generate matplotlib arguments required for plotting data in this `Style`.
 
-    def get_levels(self, layer):
-        return layer.mappable.norm.boundaries
-
-    def to_kwargs(self, data):
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The data to be plotted using this `Style`.
+        """
         levels = self.levels(data)
 
-        colors = expand_colors(self._colors, levels)
+        if self.gradients is not None:
+            self._legend_kwargs.setdefault(
+                "ticks", None
+            )  # Let matplotlib auto-generate ticks
+            return colors.gradients(
+                levels,
+                self._colors,
+                self.gradients,
+                self.normalize,
+                **self._kwargs,
+            )
 
-        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
-
-        if self._missing is not None:
-            cmap.set_bad(**self._missing)
-
-        norm = None
-        if self.normalize:
-            norm = BoundaryNorm(levels, cmap.N)
+        cmap, norm = styles.colors.cmap_and_norm(
+            self._colors,
+            levels,
+            self.normalize,
+            self.extend,
+        )
 
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
-            **self.kwargs,
+            **self._kwargs,
         }
 
     def to_contourf_kwargs(self, data):
-        kwargs = self.to_kwargs(data)
+        """
+        Generate `contourf` arguments required for plotting data in this `Style`.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The data to be plotted using this `Style`.
+        """
+        kwargs = self.to_matplotlib_kwargs(data)
         kwargs.pop("linewidths", None)
         return kwargs
 
     def to_contour_kwargs(self, data):
-        return self.to_kwargs(data)
+        """
+        Generate `contour` arguments required for plotting data in this `Style`.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The data to be plotted using this `Style`.
+        """
+        return self.to_matplotlib_kwargs(data)
 
     def to_pcolormesh_kwargs(self, data):
-        kwargs = self.to_kwargs(data)
+        """
+        Generate `pcolormesh` arguments required for plotting data in this `Style`.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The data to be plotted using this `Style`.
+        """
+        kwargs = self.to_matplotlib_kwargs(data)
         kwargs.pop("levels", None)
         kwargs.pop("transform_first", None)
         kwargs.pop("extend", None)
         return kwargs
 
     def to_scatter_kwargs(self, data):
-        kwargs = self.to_kwargs(data)
+        """
+        Generate `scatter` arguments required for plotting data in this `Style`.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The data to be plotted using this `Style`.
+        """
+        kwargs = self.to_matplotlib_kwargs(data)
         kwargs.pop("levels", None)
         return kwargs
 
     def plot(self, *args, **kwargs):
-        raise NotImplementedError("Generic styles cannot be used with 'plot'")
+        """Plot the data using the `Style`'s defaults."""
+        return self.contourf(*args, **kwargs)
 
     def contourf(self, ax, x, y, values, *args, **kwargs):
+        """
+        Plot shaded contours using this `Style`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes on which to plot the data.
+        x : numpy.ndarray
+            The x coordinates of the data to be plotted.
+        y : numpy.ndarray
+            The y coordinates of the data to be plotted.
+        values : numpy.ndarray
+            The values of the data to be plotted.
+        **kwargs
+            Any additional arguments accepted by `matplotlib.axes.Axes.contourf`.
+        """
         kwargs = {**self.to_contourf_kwargs(values), **kwargs}
         return ax.contourf(x, y, values, *args, **kwargs)
 
+    def barbs(self, ax, x, y, u, v, *args, **kwargs):
+        return ax.barbs(x, y, u, v, *args, **kwargs)
+
     def tricontourf(self, ax, x, y, values, *args, **kwargs):
+        """
+        Plot triangulated shaded contours using this `Style`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes on which to plot the data.
+        x : numpy.ndarray
+            The x coordinates of the data to be plotted.
+        y : numpy.ndarray
+            The y coordinates of the data to be plotted.
+        values : numpy.ndarray
+            The values of the data to be plotted.
+        **kwargs
+            Any additional arguments accepted by `matplotlib.axes.Axes.tricontourf`.
+        """
         kwargs = {**self.to_contourf_kwargs(values), **kwargs}
         return ax.tricontourf(x, y, values, *args, **kwargs)
 
     def contour(self, ax, x, y, values, *args, **kwargs):
+        """
+        Plot line contours using this `Style`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes on which to plot the data.
+        x : numpy.ndarray
+            The x coordinates of the data to be plotted.
+        y : numpy.ndarray
+            The y coordinates of the data to be plotted.
+        values : numpy.ndarray
+            The values of the data to be plotted.
+        **kwargs
+            Any additional arguments accepted by `matplotlib.axes.Axes.contour`.
+        """
         kwargs = {**self.to_contour_kwargs(values), **kwargs}
         return ax.contour(x, y, values, *args, **kwargs)
 
     def pcolormesh(self, ax, x, y, values, *args, **kwargs):
+        """
+        Plot a pcolormesh using this `Style`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes on which to plot the data.
+        x : numpy.ndarray
+            The x coordinates of the data to be plotted.
+        y : numpy.ndarray
+            The y coordinates of the data to be plotted.
+        values : numpy.ndarray
+            The values of the data to be plotted.
+        **kwargs
+            Any additional arguments accepted by `matplotlib.axes.Axes.pcolormesh`.
+        """
         kwargs.pop("transform_first", None)
         kwargs = {**self.to_pcolormesh_kwargs(values), **kwargs}
         return ax.pcolormesh(x, y, values, *args, **kwargs)
 
     def scatter(self, ax, x, y, values, s=3, *args, **kwargs):
+        """
+        Plot a scatter plot using this `Style`.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes on which to plot the data.
+        x : numpy.ndarray
+            The x coordinates of the data to be plotted.
+        y : numpy.ndarray
+            The y coordinates of the data to be plotted.
+        values : numpy.ndarray
+            The values of the data to be plotted.
+        **kwargs
+            Any additional arguments accepted by `matplotlib.axes.Axes.scatter`.
+        """
         kwargs.pop("transform_first", None)
         kwargs = {**self.to_scatter_kwargs(values), **kwargs}
         return ax.scatter(x, y, c=values, s=s, *args, **kwargs)
 
-    def colorbar(self, fig, layer, *args, shrink=0.8, aspect=35, **kwargs):
-        label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
-        label = layer.format_string(label)
+    def values_to_colors(self, values, data=None):
+        """
+        Convert a value or list of values to colors based on this `Style`.
 
-        kwargs = {**self._legend_kwargs, **kwargs}
-
-        if "ticks" not in kwargs:
-            levels = self.get_levels(layer)
-            if len(np.unique(np.ediff1d(levels))) > 1:
-                kwargs["ticks"] = levels
-
-        kwargs.setdefault("format", lambda x, _: f"{x:g}")
-
-        colorbar = fig.colorbar(
-            layer.mappable,
-            *args,
-            label=label,
-            shrink=shrink,
-            aspect=aspect,
-            **kwargs,
-        )
-        colorbar.ax.minorticks_off()
-
-        colorbar.solids.set(alpha=1)
-
-        return colorbar
-
-    def disjoint_legend(
-        self, fig, layer, ax, *args, location="bottom", frameon=False, **kwargs
-    ):
-        kwargs.pop("format")
-
-        label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
-        label = layer.format_string(label)
-
-        source = ax[0] if len(ax) == 1 else fig
-
-        location_kwargs = {
-            "bottom": {
-                "loc": "upper center",
-                "bbox_to_anchor": (0.5, -0.05),
-            },
-            "top": {
-                "loc": "lower center",
-                "bbox_to_anchor": (0.5, 1.0),
-            },
-            "left": {
-                "loc": "upper right",
-                "bbox_to_anchor": (-0.05, 1.0),
-            },
-            "right": {
-                "loc": "upper left",
-                "bbox_to_anchor": (1.05, 1.0),
-            },
-            "top left": {
-                "loc": "lower center",
-                "bbox_to_anchor": (0.25, 1),
-            },
-            "top right": {
-                "loc": "lower center",
-                "bbox_to_anchor": (0.75, 1),
-            },
-        }[location]
-
-        artists, labels = layer.mappable.legend_elements()
-
-        labels = kwargs.pop("labels", self._categories) or labels
-
-        legend = source.legend(
-            artists,
-            labels,
-            *args,
-            title=label,
-            frameon=frameon,
-            **{**location_kwargs, **kwargs},
-        )
-
-        # Matplotlib removes legends when a new legend is plotted, so we have
-        # to manually re-add them...
-        if hasattr(fig, "_previous_legend"):
-            fig.add_artist(fig._previous_legend)
-        fig._previous_legend = legend
-
-        return legend
-
-    disjoint = disjoint_legend
-
-    def histogram_legend(self, fig, layer, *args, aspect=20, **kwargs):
-        label = kwargs.pop("label", DEFAULT_LEGEND_LABEL)
-        label = layer.format_string(label)
-
-        colorbar = self.colorbar(fig, layer, *args, aspect=aspect, label="", **kwargs)
-        colorbar.outline.set_linestyle(":")
-        colorbar.outline.set_alpha(0.5)
-        cax = colorbar.ax
-        cax.clear()
-
-        levels = self.get_levels(layer)
-
-        location = kwargs.get("location")
-        orientation = "vertical" if location in ("top", "bottom") else "horizontal"
-
-        if location in ("top", "bottom"):
-            orientation = "vertical"
-            cax.xaxis.set_label_position("bottom")
-            cax.xaxis.set_ticks_position("bottom")
-            cax.set_xlabel(label)
-        else:
-            orientation = "horizontal"
-            cax.yaxis.set_label_position("left")
-            cax.yaxis.set_ticks_position("left")
-            cax.set_ylabel(label)
-
-        n, bins, patches = cax.hist(
-            layer.layers[0].data,
-            orientation=orientation,
-            bins=levels,
-        )
-
-        patch_height = -max(n) / 5
-        colors = [layer.mappable.cmap(i) for i in np.linspace(0, 1, len(levels))]
-
-        if orientation == "vertical":
-            cax.set_xlim([levels[0], levels[-1]])
-            cax.set_ylim([patch_height, None])
-            for i in range(len(levels) - 1):
-                cax.add_patch(
-                    Rectangle(
-                        (levels[i], patch_height),
-                        levels[i + 1] - levels[i],
-                        -patch_height,
-                        facecolor=colors[i],
-                        edgecolor="black",
-                        linewidth=0.5,
-                    )
-                )
-        else:
-            cax.set_ylim([levels[0], levels[-1]])
-            cax.set_xlim([patch_height, None])
-            for i in range(len(levels) - 1):
-                cax.add_patch(
-                    Rectangle(
-                        (patch_height, levels[i]),
-                        -patch_height,
-                        levels[i + 1] - levels[i],
-                        facecolor=colors[i],
-                        edgecolor="black",
-                        linewidth=0.5,
-                    )
-                )
-
-        for c, p in zip(colors, patches):
-            plt.setp(p, "facecolor", c)
-            plt.setp(p, "edgecolor", None)
-
-        return patches
-
-    histogram = histogram_legend
+        Parameters
+        ----------
+        values : float or list of floats
+            The values to convert to colors on this `Style`'s color scale.
+        """
+        mpl_kwargs = self.to_matplotlib_kwargs(data=data)
+        cmap = mpl_kwargs["cmap"]
+        norm = mpl_kwargs["norm"]
+        return cmap(norm(values))
 
     def legend(self, *args, **kwargs):
-        if self.legend_type is None:
+        """Create the default legend for this `Style`."""
+        if self._legend_style is None:
             return
 
         try:
-            method = getattr(self, self.legend_type)
+            method = getattr(self, self._legend_style)
         except AttributeError:
-            raise AttributeError(f"invalid legend type '{self.legend_type}'")
+            raise AttributeError(f"invalid legend type '{self._legend_style}'")
 
         return method(*args, **kwargs)
+
+    def colorbar(self, *args, **kwargs):
+        return styles.legends.colorbar(*args, **kwargs)
+
+    def disjoint(self, *args, **kwargs):
+        return styles.legends.disjoint(*args, **kwargs)
+
+    def save_legend_graphic(
+        self, filename="legend.png", data=None, transparent=True, **kwargs
+    ):
+        """
+        Save a standalone image of the legend associated with this `Style`.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the image to save.
+        data : earthkit.data.core.Base, optional
+            It can sometimes be useful to pass some data in order to
+            automatically generate legend labels or color ranges, depending on
+            the `Style`.
+        """
+        x = None
+        y = None
+
+        if data is None:
+            data = [[1, 2], [3, 4]]
+            x = [[1, 2], [3, 4]]
+            y = [[1, 2], [3, 4]]
+            kwargs["label"] = kwargs.get("label", "")
+
+        backend = mpl.get_backend()
+        mpl.use("Agg")
+
+        try:
+            getattr(self, f"_save_{self._legend_style}_graphic")(
+                data, x, y, filename, transparent, kwargs
+            )
+        finally:
+            mpl.use(backend)
+
+    def _save_colorbar_graphic(self, data, x, y, filename, transparent, kwargs):
+        from earthkit.maps import Chart
+
+        chart = Chart()
+        chart.contourf(data, x=x, y=y, style=self)
+
+        legend = chart.legend(**kwargs)[0]
+
+        chart.fig.canvas.draw()
+        bbox = legend.ax.get_window_extent().transformed(
+            chart.fig.dpi_scale_trans.inverted()
+        )
+
+        title_bbox = legend.ax.xaxis.label.get_window_extent().transformed(
+            chart.fig.dpi_scale_trans.inverted()
+        )
+
+        x, y = chart.fig.get_size_inches()
+
+        xmod, ymod = (
+            (0.05, 0.01) if legend.orientation == "horizontal" else (0.01, 0.05)
+        )
+
+        bbox.x0 = min(bbox.x0, title_bbox.x0) - x * xmod
+        bbox.x1 = max(bbox.x1, title_bbox.x1) + x * xmod
+        bbox.y0 = min(bbox.y0, title_bbox.y0) - y * ymod
+        bbox.y1 = max(bbox.y1, title_bbox.y1) + y * ymod
+
+        plt.savefig(filename, dpi="figure", bbox_inches=bbox, transparent=transparent)
+
+    def _save_disjoint_graphic(self, data, x, y, filename, transparent, kwargs):
+        from earthkit.maps import Chart
+
+        chart = Chart()
+        chart.contourf(data, x=x, y=y, style=self)
+
+        legend = chart.legend(**kwargs)[0]
+
+        chart.fig.canvas.draw()
+        fig = legend.figure
+        fig.canvas.draw()
+        bbox = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+
+        plt.savefig(filename, dpi="figure", bbox_inches=bbox, transparent=transparent)
 
 
 class Contour(Style):
     def __init__(
         self,
-        *args,
         colors=None,
         line_colors=None,
         labels=False,
@@ -442,15 +518,12 @@ class Contour(Style):
         interpolate=True,
         **kwargs,
     ):
-        super().__init__(*args, colors=colors, **kwargs)
+        super().__init__(colors=colors, **kwargs)
         self._line_colors = line_colors
         self.labels = labels
         self._label_kwargs = label_kwargs or dict()
         self._interpolate = interpolate
-        self.kwargs["linewidths"] = kwargs.get("linewidths", 0.5)
-
-    def get_levels(self, layer):
-        return layer.mappable.levels
+        self._kwargs["linewidths"] = kwargs.get("linewidths", 0.5)
 
     def plot(self, *args, **kwargs):
         if self._colors is not None:
@@ -461,45 +534,19 @@ class Contour(Style):
         else:
             return self.contour(*args, **kwargs)
 
-    def to_kwargs(self, data):
+    def to_contour_kwargs(self, data):
         levels = self.levels(data)
-
-        colors = self._colors
-        if colors is None:
-            colors = self._line_colors or schema.cmap
-        colors = expand_colors(colors, levels)
-
-        if self.gradients is not None:
-            self._legend_kwargs.setdefault(
-                "ticks", None
-            )  # Let matplotlib auto-generate ticks
-            return gradients_cmap(
-                levels, colors, self.gradients, self.normalize, **self.kwargs
-            )
-
-        cmap = LinearSegmentedColormap.from_list(name="", colors=colors, N=len(levels))
-        if self._missing is not None:
-            cmap.set_bad(**self._missing)
-
-        norm = None
-        if self.normalize:
-            norm = BoundaryNorm(levels, cmap.N)
+        cmap, norm = styles.colors.cmap_and_norm(
+            self._line_colors,
+            levels,
+            self.normalize,
+            self.extend,
+        )
 
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
-            **self.kwargs,
+            **self._kwargs,
         }
-
-    def to_contour_kwargs(self, data):
-        kwargs = super().to_contour_kwargs(data)
-
-        if self._colors and self._line_colors:
-            colors = expand_colors(self._line_colors, kwargs["levels"])
-            kwargs["cmap"] = LinearSegmentedColormap.from_list(
-                name="", colors=colors, N=len(kwargs["levels"])
-            )
-
-        return kwargs
 
     def contourf(self, ax, x, y, values, *args, **kwargs):
         mappable = super().contourf(ax, x, y, values, *args, **kwargs)
@@ -540,54 +587,6 @@ class Contour(Style):
         return clabels
 
 
-class Continuous(Contour):
-    def __init__(self, *args, gradients=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.gradients = gradients
-        logger.warning(
-            "DEPRECATION WARNING: `styles.Continuous` is deprecated, all the functionality is "
-            "now available in `styles.Contour` with the same API.\n"
-            "Please update your code to use `styles.Contour` as `styles.Continuous` will "
-            "be removed in future versions of earthkit-maps.\n"
-        )
-
-    def to_kwargs(self, data):
-        levels = self.levels(data)
-
-        colors = self._colors
-        if colors is None:
-            colors = self._line_colors or schema.cmap
-        colors = expand_colors(colors, levels)
-
-        normalised = (levels - np.min(levels)) / (np.max(levels) - np.min(levels))
-        color_bins = list(zip(normalised, colors))
-        cmap = LinearSegmentedColormap.from_list(name="", colors=color_bins, N=255)
-        if self._missing is not None:
-            cmap.set_bad(**self._missing)
-
-        gradients = self.gradients or [int(255 / len(levels))] * (len(levels) - 1)
-        if not isinstance(gradients, (list, tuple)):
-            gradients = [gradients] * (len(levels) - 1)
-
-        extrapolated_levels = []
-        for i in range(len(levels) - 1):
-            bins = list(np.linspace(levels[i], levels[i + 1], gradients[i]))
-            extrapolated_levels += bins[(1 if i != 0 else 0) :]
-        levels = extrapolated_levels
-
-        norm = None
-        if self.normalize:
-            norm = BoundaryNorm(levels, cmap.N)
-
-        return {
-            **{"cmap": cmap, "norm": norm, "levels": levels},
-            **self.kwargs,
-        }
-
-    def colorbar(self, *args, ticks=None, **kwargs):
-        return super().colorbar(*args, ticks=ticks, **kwargs)
-
-
 class Hatched(Contour):
     def __init__(self, *args, hatches=".", background_colors=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -598,10 +597,10 @@ class Hatched(Contour):
     def contourf(self, *args, **kwargs):
         mappable = super().contourf(*args, hatches=self.hatches, **kwargs)
 
-        colors = expand_colors(self._foreground_colors, mappable.levels)
+        line_colors = colors.expand(self._foreground_colors, mappable.levels)
 
         for i, collection in enumerate(mappable.collections):
-            collection.set_edgecolor(colors[i])
+            collection.set_edgecolor(line_colors[i])
             collection.set_linewidth(0)
 
         return mappable
@@ -611,30 +610,22 @@ class Hatched(Contour):
 
         levels = colorbar.mappable.levels
 
-        colors = expand_colors(self._foreground_colors, levels)
+        line_colors = colors.expand(self._foreground_colors, levels)
         for i, artist in enumerate(colorbar.solids_patches):
-            artist.set_edgecolor(colors[i])
+            artist.set_edgecolor(line_colors[i])
 
         return colorbar
 
-    def disjoint(self, fig, layer, ax, *args, **kwargs):
-        legend = super().disjoint(fig, layer, ax, *args, **kwargs)
+    def disjoint(self, layer, *args, **kwargs):
+        legend = super().disjoint(layer, *args, **kwargs)
 
-        colors = expand_colors(self._foreground_colors, layer.mappable.levels)
+        line_colors = colors.expand(self._foreground_colors, layer.mappable.levels)
 
-        for color, artist in zip(colors, legend.get_patches()):
+        for color, artist in zip(line_colors, legend.get_patches()):
             artist.set_edgecolor(color)
             artist.set_linewidth(0.0)
 
         return legend
 
 
-class Scatter(Style):
-    def plot(self, *args, **kwargs):
-        return self.scatter(*args, **kwargs)
-
-    def get_levels(self, layer):
-        return self.levels([layer.mappable.norm.vmin, layer.mappable.norm.vmax])
-
-
-DEFAULT_STYLE = Style(colors=schema.cmap)
+DEFAULT_STYLE = Style()

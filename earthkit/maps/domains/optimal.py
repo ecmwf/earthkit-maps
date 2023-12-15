@@ -81,6 +81,7 @@ class Extents:
             multiplicator = 2 * (90 - abs(self.max_lat))
         else:
             multiplicator = self.max_lat - self.min_lat
+
         return (self.max_lon - self.min_lon) * multiplicator
 
     @property
@@ -102,7 +103,10 @@ class Extents:
 
     @property
     def max_lon(self):
-        return self.extents[1]
+        value = self.extents[1]
+        if value < self.min_lon:
+            value = 180 + (180 + value)
+        return value
 
     @property
     def min_lat(self):
@@ -258,7 +262,7 @@ def crs_from_bounds(bounds):
 
     Parameters
     ----------
-    extents : list
+    bounds : list
         The latitude and longitude extents of the bounding box, given as
         `[min_longitude, max_longitude, min_latitude, max_latitude]`.
 

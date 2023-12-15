@@ -1,0 +1,39 @@
+id: 2m-temperature
+preferred-style: temperature_at_2m_in_celsius
+
+criteria:
+- {paramId: 167, shortName: 2t}
+- {paramId: 130, shortName: t}
+- {centre: edzw, paramId: 167}
+- {centre: edzw, paramId: 500015}
+- {centre: edzw, paramId: 500016}
+- {standard_name: air_temperature}
+- {standard_name: temp_scrn}
+- {long_name: near-surface air temperature}
+- {long_name: 2 metre temperature}
+- {long_name: Mean 2 metre temperature}
+- {long_name: screen level temperature}
+- {stash_code: 3236}
+
+styles:
+
+  temperature_at_2m_in_celsius:
+    type: Contour
+    colors: turbo
+    extend: both
+    levels: range(-40, 41, 2)
+    units: celsius
+
+  temperature_at_2m_in_kelvin:
+    type: Contour
+    colors: turbo
+    extend: both
+    levels: range(230, 311, 2)
+    units: K
+
+  temperature_at_2m_in_fahrenheit:
+    type: Contour
+    colors: turbo
+    extend: both
+    levels: range(-40, 101, 5)
+    units: fahrenheit

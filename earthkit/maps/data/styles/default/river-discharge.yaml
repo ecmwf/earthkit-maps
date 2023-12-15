@@ -1,4 +1,0 @@
-styles:
-  default: river_discharge.RIVER_DISCHARGE_OVER_LAST_6_HOURS_IN_M3_PER_S
-  units:
-    m**3 s**-1: river_discharge.RIVER_DISCHARGE_OVER_LAST_6_HOURS_IN_M3_PER_S
