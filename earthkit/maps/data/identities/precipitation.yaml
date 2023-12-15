@@ -1,4 +1,0 @@
-id: precipitation
-criteria:
-- {shortName: tp}
-- {long_name: Total precipitation}
