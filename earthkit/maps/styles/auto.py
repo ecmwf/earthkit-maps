@@ -25,10 +25,10 @@ def guess_style(data, units=None):
     from earthkit.maps import schema
 
     if os.path.exists(schema.style_library):
-        styles_path = f"{schema.style_library}/*"
+        styles_path = f"{schema.style_library}/"
     else:
         styles_path = definitions.STYLES_DIR / (
-            "*" if schema.style_library == "default" else f"{schema.style_library}/*"
+            "" if schema.style_library == "default" else f"{schema.style_library}/"
         )
 
     for fname in glob.glob(str(styles_path)):
@@ -50,6 +50,12 @@ def guess_style(data, units=None):
     else:
         return styles.DEFAULT_STYLE
 
+    if 'alias-style' in config: 
+        # Alias style specified, load new style
+        new_style_name = styles_path / (config['alias-style'] + '.yaml')
+        with open(new_style_name) as f:
+            config = yaml.load(f, Loader=yaml.SafeLoader)
+            
     if units is None:
         style = config["styles"][config["preferred-style"]]
     else:
