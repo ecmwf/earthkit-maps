@@ -31,7 +31,7 @@ def guess_style(data, units=None):
             "" if schema.style_library == "default" else f"{schema.style_library}/"
         )
 
-    for fname in (*glob.glob(str(styles_path / '*')), *glob.glob(str(definitions.STYLES_DIR / '*.*'))):
+    for fname in (*glob.glob(str(styles_path / '*.*')), *glob.glob(str(definitions.STYLES_DIR / '*.*'))):
         with open(fname, "r") as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
 
