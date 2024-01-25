@@ -411,8 +411,11 @@ class Style:
         values : float or list of floats
             The values to convert to colors on this `Style`'s color scale.
         """
-        if values is np.nan:
-            return self._missing_value_color
+        try:
+            if np.isnan(values):
+                return self._missing_value_color
+        except ValueError:
+            pass
         mpl_kwargs = self.to_matplotlib_kwargs(data=data)
         cmap = mpl_kwargs["cmap"]
         norm = mpl_kwargs["norm"]
@@ -421,7 +424,7 @@ class Style:
 
         if not isinstance(values, (int, float, str)):
             for i, v in enumerate(values):
-                if v is np.nan:
+                if np.isnan(v):
                     colors[i] = self._missing_value_color
 
         return colors
