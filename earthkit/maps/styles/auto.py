@@ -32,8 +32,9 @@ def guess_style(data, units=None):
         )
 
     for fname in glob.glob(str(styles_path)):
-        with open(fname, "r") as f:
-            config = yaml.load(f, Loader=yaml.SafeLoader)
+        if os.path.isfile(fname):
+            with open(fname, "r") as f:
+                config = yaml.load(f, Loader=yaml.SafeLoader)
 
         for criteria in config["criteria"]:
             for key, value in criteria.items():
