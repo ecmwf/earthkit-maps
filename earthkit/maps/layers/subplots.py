@@ -132,12 +132,6 @@ class Subplot:
                     kwargs.pop("transform_first", None)
                     transform = self.domain.crs
 
-                # elif data.metadata("gridType", default=None) == "healpix":
-                #     is_reduced_gg = True
-                #     x, y, values = extract_reduced_gg(data, self.domain)
-                #     kwargs.pop("transform_first", None)
-                #     transform = self.domain.crs
-
                 else:
                     x, y, values = extract_scalar(data, self.domain)
                 if transform is None:
