@@ -115,7 +115,7 @@ class Input:
             return {"grid": g}
         elif self.data.metadata("gridType", default="") == "healpix":
             n = self.data.metadata("Nside", default=None)
-            o = self.data.metadata("pointsOrdering", default=None)
+            o = self.data.metadata("orderingConvention", default=None)
             if n is not None and o is not None:
                 return {"grid": f"H{n}", "ordering": o}
 
