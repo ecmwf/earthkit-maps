@@ -35,6 +35,8 @@ def guess_style(data, units=None):
         if os.path.isfile(fname):
             with open(fname, "r") as f:
                 config = yaml.load(f, Loader=yaml.SafeLoader)
+        else:
+            continue
 
         for criteria in config["criteria"]:
             for key, value in criteria.items():
