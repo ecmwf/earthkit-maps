@@ -267,7 +267,13 @@ class Chart:
         def wrapper(self, data, *args, **kwargs):
             if not isinstance(data, (earthkit.data.core.Base, list, np.ndarray)):
                 data = earthkit.data.from_object(data)
-            if not isinstance(data, earthkit.data.core.Base) or not hasattr(
+
+            if method.__name__ in ["barbs"]:
+                if not isinstance(data, list):
+                    data = [data]
+                data = list(map(earthkit.data.from_object, data))
+
+            elif not isinstance(data, earthkit.data.core.Base) or not hasattr(
                 data, "__len__"
             ):
                 data = [data]
