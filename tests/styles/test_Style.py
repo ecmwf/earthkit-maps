@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import pytest
 
 from earthkit.maps import styles
@@ -56,3 +57,15 @@ def test_Style_convert_units_anomaly():
         style.convert_units(-5, source_units="kelvin", short_name="temperature_anomaly")
         == -5
     )
+
+
+def test_Style_values_to_colors():
+    style = styles.Style(levels=[1, 2, 3, 4], colors=["red", "green", "blue"])
+    assert style.values_to_colors(2.7) == (0.0, 0.5019607843137255, 0.0, 1.0)
+    assert style.values_to_colors(3) == (0.0, 0.0, 1.0, 1.0)
+    assert style.values_to_colors(0.25) == (1.0, 0.0, 0.0, 1.0)
+    assert style.values_to_colors(np.nan) == (0.0, 0.0, 0.0, 0.0)
+    assert style.values_to_colors([0.25, np.nan]).tolist() == [
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0],
+    ]

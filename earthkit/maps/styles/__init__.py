@@ -16,6 +16,7 @@ import warnings
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 
 from earthkit.maps import metadata, styles
 from earthkit.maps.schemas import schema
@@ -91,6 +92,7 @@ class Style:
         normalize=True,
         units=None,
         units_label=None,
+        missing_value_color=(0, 0, 0, 0),
         legend_style="colorbar",
         legend_kwargs=None,
         bin_labels=None,
@@ -124,6 +126,8 @@ class Style:
         self._legend_kwargs = legend_kwargs or dict()
         if ticks is not None:
             self._legend_kwargs["ticks"] = ticks
+
+        self._missing_value_color = missing_value_color
 
         self._kwargs = kwargs
 
@@ -229,6 +233,8 @@ class Style:
             self.normalize,
             self.extend,
         )
+
+        cmap.set_bad(self._missing_value_color)
 
         return {
             **{"cmap": cmap, "norm": norm, "levels": levels},
@@ -405,10 +411,24 @@ class Style:
         values : float or list of floats
             The values to convert to colors on this `Style`'s color scale.
         """
+
+        try:
+            if np.isnan(values):
+                return self._missing_value_color
+        except ValueError:
+            pass
         mpl_kwargs = self.to_matplotlib_kwargs(data=data)
         cmap = mpl_kwargs["cmap"]
         norm = mpl_kwargs["norm"]
-        return cmap(norm(values))
+
+        colors = cmap(norm(values))
+
+        if not isinstance(values, (int, float, str)):
+            for i, v in enumerate(values):
+                if np.isnan(v):
+                    colors[i] = self._missing_value_color
+
+        return colors
 
     def legend(self, *args, **kwargs):
         """Create the default legend for this `Style`."""
