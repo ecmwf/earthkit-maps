@@ -58,6 +58,7 @@ def test_Style_convert_units_anomaly():
         == -5
     )
 
+
 def test_Style_values_to_colors():
     style = styles.Style(levels=[1, 2, 3, 4], colors=["red", "green", "blue"])
     assert style.values_to_colors(2.7) == (0.0, 0.5019607843137255, 0.0, 1.0)

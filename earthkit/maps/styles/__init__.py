@@ -142,7 +142,7 @@ class Style:
     def levels(self, data=None):
         """
         Generate levels specific to some data.
-        
+
         Parameters
         ----------
         data : numpy.ndarray or xarray.DataArray or earthkit.data.core.Base
