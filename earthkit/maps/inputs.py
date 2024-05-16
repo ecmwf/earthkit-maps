@@ -113,6 +113,11 @@ class Input:
                 else:
                     g = f"N{n}"
             return {"grid": g}
+        elif self.data.metadata("gridType", default="") == "healpix":
+            n = self.data.metadata("Nside", default=None)
+            o = self.data.metadata("orderingConvention", default=None)
+            if n is not None and o is not None:
+                return {"grid": f"H{n}", "ordering": o}
 
     def extract(self, domain=None):
         if self.x is None and self.y is None:

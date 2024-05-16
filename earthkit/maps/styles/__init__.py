@@ -142,7 +142,7 @@ class Style:
     def levels(self, data=None):
         """
         Generate levels specific to some data.
-
+        
         Parameters
         ----------
         data : numpy.ndarray or xarray.DataArray or earthkit.data.core.Base
@@ -411,6 +411,7 @@ class Style:
         values : float or list of floats
             The values to convert to colors on this `Style`'s color scale.
         """
+
         try:
             if np.isnan(values):
                 return self._missing_value_color
