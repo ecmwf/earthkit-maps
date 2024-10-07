@@ -7,7 +7,7 @@
 
 **DISCLAIMER**
 
-> This project is in the **BETA** stage of development. Please be aware that interfaces and functionality may change as the project develops. If this software is to be used in operational systems you are **strongly advised to use a released tag in your system configuration**, and you should be willing to accept incoming changes and bug fixes that require adaptations on your part. ECMWF **does use** this software in operations and abides by the same caveats.
+> This project and all of its functionality has been merged into [earthkit-plots](https://github.com/ecmwf/earthkit-plots). As such, earthkit-maps is now **deprecated** and no longer supported. Please use [earthkit-plots](https://github.com/ecmwf/earthkit-plots) instead.
 
 Format-agnostics geospatial visualisation tools and templates.
 
